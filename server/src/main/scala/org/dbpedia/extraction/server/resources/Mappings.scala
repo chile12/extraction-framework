@@ -43,6 +43,7 @@ class Mappings(@PathParam("lang") langCode : String)
               <div class="col-md-3 col-md-offset-5">
               <h2>Mappings</h2>
               <a href="pages/">Source Pages</a><br/>
+                <a href="pages/rdf/">As Rdf</a><br/>
               <a href="validate/">Validate Pages</a><br/>
               <a href="extractionSamples/">Retrieve extraction samples</a><br/>
               <a href={"../../statistics/"+language.wikiCode+"/"}>Statistics</a><br/>
@@ -88,6 +89,20 @@ class Mappings(@PathParam("lang") langCode : String)
         val pages = Server.instance.extractor.mappingPageSource(language)
         pages.find(_.title == parsed).getOrElse(throw new Exception("No mapping found for " + parsed)).toDumpXML
     }
+
+  /**
+   * Retrieves a mapping as rml
+   */
+  @GET
+  @Path("pages/rdf/{title: .+$}")
+  @Produces(Array("application/xml"))
+  def getRdf(@PathParam("title") title : String) : Elem =
+  {
+    logger.info("Get mappings page: " + title)
+    val parsed = WikiTitle.parse(title, language)
+    val pages = Server.instance.extractor.mappingPageSource(language)
+    pages.find(_.title == parsed).getOrElse(throw new Exception("No mapping found for " + parsed)).toDumpXML
+  }
 
     /**
      * Writes a mapping page

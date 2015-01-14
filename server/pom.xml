@@ -44,6 +44,27 @@
 							</jvmArgs>
 						</launcher>
 						<launcher>
+							<id>debug</id>
+							<mainClass>org.dbpedia.extraction.server.Server</mainClass>
+							<args>
+								<arg>server.default.properties</arg><!-- language / extractor list -->
+							</args>
+							<jvmArgs>
+								<jvmArg>-Xdebug</jvmArg>
+								<jvmArg>-Xms512m</jvmArg>
+								<jvmArg>-Xmx4096m</jvmArg><!-- 4G is ok with CMS or G1, other GCs
+									need >= 4.5G -->
+								<jvmArg>-XX:-OmitStackTraceInFastThrow</jvmArg><!-- always show full
+									exception to make sure that validation messages are useful -->
+								<jvmArg>-XX:+PrintGC</jvmArg>
+								<jvmArg>-XX:+PrintGCTimeStamps</jvmArg>
+								<jvmArg>-XX:+HeapDumpOnOutOfMemoryError</jvmArg>
+								<jvmArg>-XX:+UseConcMarkSweepGC</jvmArg>
+								<!-- <jvmArg>-XX:+UseG1GC</jvmArg> --><!-- ~20% slower than CMS -->
+								<!-- <jvmArg>-XX:+PrintGCDetails</jvmArg> --><!-- not necessary with CMS, annoying with G1 -->
+							</jvmArgs>
+						</launcher>
+						<launcher>
 							<id>stats</id>
 							<mainClass>org.dbpedia.extraction.server.stats.CreateMappingStats</mainClass>
 							<args>
