@@ -23,9 +23,9 @@ mapping:{TITLE}-Class-{MAP-TO-CLASS} rr:template "http://dbpedia.org/resource/{}
 
 
 ## simple property mapping => for loop for all property mappings
-mapping:{TITLE} rr:predicateObjectMap mapping:{TITLE}-Map-{TEMPLATE-PROPERTY}-{ONTOLOGY-PROPERTY} .
-mapping:{TITLE}-Map-{TEMPLATE-PROPERTY}-{ONTOLOGY-PROPERTY}
+mapping:{TITLE} rr:predicateObjectMap mapping:{TITLE}-tempProp+{TEMPLATE-PROPERTY}-dboProp+{ONTOLOGY-PROPERTY} .
+mapping:{TITLE}-tempProp+{TEMPLATE-PROPERTY}-dboProp+{ONTOLOGY-PROPERTY}
         rr:predicate dbo:{ONTOLOGY-PROPERTY};
         rr:objectMap [
             rml:reference "{TEMPLATE-PROPERTY}";
-        ] .
+        ].

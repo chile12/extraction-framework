@@ -48,17 +48,11 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
   protected val parser = WikiParser.getInstance()
 
-  def getRdfTemplate(): String =
-  {
-    val B = new StringBuilder()
-    prefixSeq.foreach(x => B.append(x + "\n"))
-    B.append("\n")
-    prefixSeq.foreach((B.append(_)))
-    B.toString()
-  }
-
   def getRdfHttpTemplate() : Elem =
   {
+    if(mappings.templateMappings.size < 1)
+      throw new Exception("No mappings found for " + page.title.decoded) //TODO??
+
     val mapps = mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mappings.collect
     {
       case simpleProp : SimplePropertyMapping => simpleProp
@@ -108,7 +102,8 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
   private def replaceProperty(in: String, templateProperty: String, ontologyProperty: String): String =
   {
-    var out = in.replaceAllLiterally("{template-property}", templateProperty)
+    var out = in.replaceAllLiterally("\"{template-property}\"", "\"" + templateProperty.replaceAllLiterally("%20", " ") + "\"")
+    out = out.replaceAllLiterally("{template-property}", templateProperty)
     out.replaceAllLiterally("{ontology-property}", ontologyProperty)
   }
 }
