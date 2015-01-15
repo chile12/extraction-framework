@@ -1,0 +1,31 @@
+@prefix rr:     <http://www.w3.org/ns/r2rml#>.
+@prefix rml:    <http://semweb.mmlab.be/ns/rml#> .
+@prefix ql:     <http://semweb.mmlab.be/ns/ql#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix dbo:    <http://dbpedia.org/ontology/>.
+@prefix foaf:   <http://xmlns.com/foaf/0.1/>.
+@prefix mapping: <http://mappings.dbpedia.org/server/mappings/{LANG}/>.
+
+
+
+mapping:{TITLE}
+    rml:logicalSource [
+        rml:source "";
+        rml:referenceFormulation ql:keyValue
+    ].
+
+## map to class statement
+mapping:{TITLE} rr:subjectMap mapping:{TITLE}-Class-{MAP-TO-CLASS} .
+mapping:{TITLE}-Class-{MAP-TO-CLASS} rr:template "http://dbpedia.org/resource/{}";
+        #check: is it dbpprop?
+        rr:class dbo:{MAP-TO-CLASS}.
+
+
+## simple property mapping => for loop for all property mappings
+mapping:{TITLE} rr:predicateObjectMap mapping:{TITLE}-Map-{TEMPLATE-PROPERTY}-{ONTOLOGY-PROPERTY} .
+mapping:{TITLE}-Map-{TEMPLATE-PROPERTY}-{ONTOLOGY-PROPERTY}
+        rr:predicate dbo:{ONTOLOGY-PROPERTY};
+        rr:objectMap [
+            rml:reference "{TEMPLATE-PROPERTY}";
+        ] .

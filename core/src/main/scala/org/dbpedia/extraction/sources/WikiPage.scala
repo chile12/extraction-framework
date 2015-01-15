@@ -1,10 +1,8 @@
 package org.dbpedia.extraction.sources
 
-import org.dbpedia.extraction.wikiparser.WikiTitle
+import org.dbpedia.extraction.wikiparser.{WikiTitle}
 import org.dbpedia.extraction.sources.WikiPage._
 import org.dbpedia.extraction.util.StringUtils._
-import java.lang.StringBuilder
-import org.dbpedia.extraction.util.WikiUtil
 
 /**
  * Represents a wiki page
@@ -72,7 +70,7 @@ object WikiPage {
       </page>
     </mediawiki>
   }
-  
+
   /**
    * XML for one page, api.php format.
    * TODO: use redirect

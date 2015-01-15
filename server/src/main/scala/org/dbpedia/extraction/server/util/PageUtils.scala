@@ -44,4 +44,13 @@ object PageUtils
     </body>
     </html>
   }
+
+  /**
+   * Generates a relative link of rml mapping from the title of the given page. A colon in the title is escaped,
+   * otherwise the browser would interpret the namespace as a protocol.
+   */
+  def relativeMappingLink(page: PageNode): Elem =
+  {
+    <a href={"rdf/" + page.title.encodedWithNamespace.replace(":", "%3A")}>{page.title.decodedWithNamespace}</a>
+  }
 }

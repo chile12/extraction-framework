@@ -1,19 +1,18 @@
 package org.dbpedia.extraction.mappings
 
-import org.dbpedia.extraction.ontology.datatypes._
 import org.dbpedia.extraction.dataparser._
 import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
+import org.dbpedia.extraction.ontology.datatypes._
+import org.dbpedia.extraction.ontology.{DBpediaNamespace, OntologyClass, OntologyDatatypeProperty, OntologyProperty, _}
 import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.ontology._
-import java.lang.IllegalArgumentException
 import org.dbpedia.extraction.wikiparser.TemplateNode
-import org.dbpedia.extraction.ontology.{OntologyDatatypeProperty,OntologyClass,OntologyProperty,DBpediaNamespace}
+
 import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
 
 class SimplePropertyMapping (
   val templateProperty : String, // IntermediateNodeMapping and CreateMappingStats requires this to be public
-  ontologyProperty : OntologyProperty,
+  val ontologyProperty : OntologyProperty,
   select : String,
   prefix : String,
   suffix : String,

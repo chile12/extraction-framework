@@ -1,18 +1,20 @@
 package org.dbpedia.extraction.server.resources
 
-import org.dbpedia.extraction.util.{Language, WikiApi}
-import org.dbpedia.extraction.server.resources.stylesheets.{TriX,Log}
-import org.dbpedia.extraction.server.Server
-import javax.ws.rs._
-import java.util.logging.{Logger,Level}
-import org.dbpedia.extraction.wikiparser.{PageNode, WikiParser, Namespace, WikiTitle}
-import org.dbpedia.extraction.server.util.PageUtils
-import org.dbpedia.extraction.sources.{WikiSource, XMLSource}
-import org.dbpedia.extraction.destinations.{WriterDestination,LimitingDestination}
-import java.net.{URI, URL}
-import java.lang.Exception
-import xml.{ProcInstr, XML, NodeBuffer, Elem}
 import java.io.StringWriter
+import java.net.URL
+import java.util.logging.{Level, Logger}
+import javax.ws.rs._
+
+import org.dbpedia.extraction.destinations.{LimitingDestination, WriterDestination}
+import org.dbpedia.extraction.mappings.{MappingsLoader, Redirects}
+import org.dbpedia.extraction.server.Server
+import org.dbpedia.extraction.server.resources.stylesheets.{Log, TriX}
+import org.dbpedia.extraction.server.util.PageUtils
+import org.dbpedia.extraction.sources.{WikiPage, WikiSource, XMLSource}
+import org.dbpedia.extraction.util.{Language, WikiApi}
+import org.dbpedia.extraction.wikiparser.{Namespace, WikiParser, WikiTitle}
+
+import scala.xml.{Elem, NodeBuffer}
 
 /**
  * TODO: merge Extraction.scala and Mappings.scala
@@ -22,7 +24,7 @@ class Mappings(@PathParam("lang") langCode : String)
 {
     private val logger = Logger.getLogger(classOf[Mappings].getName)
 
-    private val language = Language.getOrElse(langCode, throw new WebApplicationException(new Exception("invalid language "+langCode), 404))
+    private val language : Language = Language.getOrElse(langCode, throw new WebApplicationException(new Exception("invalid language "+langCode), 404))
 
     if(!Server.instance.managers.contains(language))
         throw new WebApplicationException(new Exception("language "+langCode+" not configured in server"), 404)
@@ -43,7 +45,7 @@ class Mappings(@PathParam("lang") langCode : String)
               <div class="col-md-3 col-md-offset-5">
               <h2>Mappings</h2>
               <a href="pages/">Source Pages</a><br/>
-                <a href="pages/rdf/">As Rdf</a><br/>
+                <a href="pages/rdf/">Rdf Mappings</a><br/>
               <a href="validate/">Validate Pages</a><br/>
               <a href="extractionSamples/">Retrieve extraction samples</a><br/>
               <a href={"../../statistics/"+language.wikiCode+"/"}>Statistics</a><br/>
@@ -94,14 +96,63 @@ class Mappings(@PathParam("lang") langCode : String)
    * Retrieves a mapping as rml
    */
   @GET
-  @Path("pages/rdf/{title: .+$}")
+  @Path("pages/rdf/")
   @Produces(Array("application/xml"))
   def getRdf(@PathParam("title") title : String) : Elem =
+  {
+    val pages = Server.instance.extractor.mappingPageSource(language)
+
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+      {ServerHeader.getHeader("Mapping pages")}
+      <body>
+        <div class="row">
+          <div class="col-md-3 col-md-offset-5">
+            <h2>Rdf Mapping pages</h2>
+            { pages.map(page => PageUtils.relativeLink(parser(page).getOrElse(throw new Exception("Cannot get page: " + page.title.decoded + ". Parsing failed"))) ++ <br/>) }
+          </div>
+        </div>
+      </body>
+    </html>
+  }
+
+  /**
+   * Retrieves a rml mapping page
+   */
+  @GET
+  @Path("pages/rdf/{title: .+$}")
+  @Produces(Array("application/xml"))
+  def getRmlPage(@PathParam("title") title : String) : Elem =
   {
     logger.info("Get mappings page: " + title)
     val parsed = WikiTitle.parse(title, language)
     val pages = Server.instance.extractor.mappingPageSource(language)
-    pages.find(_.title == parsed).getOrElse(throw new Exception("No mapping found for " + parsed)).toDumpXML
+    val page = pages.filter(_.title == parsed)
+
+    if(page.size != 1)
+      throw new Exception("Cannot get page: " + title + ". Parsing failed")  //TODO??
+
+    // context object that has only this mappingSource
+    val context = new {
+      val ontology = Server.instance.extractor.ontology()
+      val language = Language.getOrElse(langCode, throw new WebApplicationException(new Exception("invalid language "+langCode), 404))
+      val redirects: Redirects = new Redirects(Map())
+      val mappingPageSource = page
+    }
+
+    //Load mappings
+    val mappings = MappingsLoader.load(context)
+    getRdfTemplate(page.head, mappings)
+  }
+
+  def getRdfTemplate(page: WikiPage, mappings: org.dbpedia.extraction.mappings.Mappings) : Elem=
+  {
+    val rdfTemplate = new RdfTemplateMapping(parser(page).get, language, mappings)
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+      {ServerHeader.getHeader("Mappings")}
+      <body>
+            {rdfTemplate.getRdfHttpTemplate()}
+      </body>
+    </html>
   }
 
     /**

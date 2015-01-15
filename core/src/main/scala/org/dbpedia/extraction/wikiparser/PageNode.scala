@@ -28,8 +28,6 @@ class PageNode (
 extends Node(children, 0)
 {
     def toWikiText = children.map(_.toWikiText).mkString
-
     def toPlainText = children.map(_.toPlainText).mkString
-
     def toDumpXML = WikiPage.toDumpXML(title, id, revision, timestamp, contributorID, contributorName, toWikiText, "text/x-wiki")
 }
