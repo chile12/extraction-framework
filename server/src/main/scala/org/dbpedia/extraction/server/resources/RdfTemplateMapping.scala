@@ -15,15 +15,16 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 {
   private val file = "/rdfTemplateTemplate.txt"
   private val rdfTemplate = new mutable.MutableList[String]
+  private var indent = 0
 
   val in = getClass.getResourceAsStream(file)
   try {
     val titles =
       for (line <- Source.fromInputStream(in)(Codec.UTF8).getLines
-        if(!line.trim().startsWith("#")))
+        if(line.trim().startsWith("##") || !line.trim().startsWith("#")))
           yield
           {
-            line.toLowerCase().trim()
+              line.trim()
           }
 
     rdfTemplate ++= titles.toList
@@ -32,18 +33,12 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
   rdfTemplate.reverse
 
-  val prefixSeq = rdfTemplate.slice(0,rdfTemplate.lastIndexWhere(_.trim().startsWith("@prefix"))+1)
-  var index = rdfTemplate.indexWhere(_.contains("rml:logicalsource"))
-  var start = rdfTemplate.lastIndexWhere(_.contains("mapping:{title}"), index)
-  var end = rdfTemplate.indexWhere(_.endsWith("."), index) +1
-  val sourceSeq = rdfTemplate.slice(start, end)
-  index = rdfTemplate.indexWhere(_.contains("{map-to-class}"))
-  start = rdfTemplate.lastIndexWhere(_.contains("mapping:{title} "), index)
-  end = rdfTemplate.indexWhere(_.endsWith("."), start+1) +1
+  val prefixSeq = rdfTemplate.slice(0,rdfTemplate.lastIndexWhere(_.trim().startsWith("## end of init statement")))
+  var start = rdfTemplate.indexWhere((_.startsWith("## class statement"))) +1
+  var end = rdfTemplate.indexWhere(_.endsWith("class statement"), start)
   val classSeq = rdfTemplate.slice(start, end)
-  index = rdfTemplate.indexWhere(_.contains("{template-property}"))
-  start = rdfTemplate.lastIndexWhere(_.contains("mapping:{title} "), index)
-  end = rdfTemplate.indexWhere(_.endsWith("."), start+1) +1
+  start = rdfTemplate.indexWhere((_.startsWith("## simple predicateObject mapping"))) +1
+  end = rdfTemplate.indexWhere(_.endsWith("simple predicateObject mapping"), start)
   val propSeq = rdfTemplate.slice(start, end)
 
   protected val parser = WikiParser.getInstance()
@@ -60,7 +55,9 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
     <div>
       <div>
-        {getHttpRows(prefixSeq)}
+        {
+          getHttpRows(prefixSeq)
+        }
       </div>
       <div>
         {getHttpRows(classSeq)}
@@ -76,6 +73,7 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
   private def getHttpRows(in: mutable.MutableList[String]): Elem =
   {
+    indent =0
       <p>
         {
           in.map(x => replaceParams(x) ++ <br/>)
@@ -85,25 +83,34 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
   private def getHttpPropertyRow(templateProperty: String, ontologyProperty: String): Elem =
   {
+    indent =0
     <div>
       <p>
         {
-          propSeq.map(x => replaceProperty(replaceParams(x), templateProperty.trim().replaceAllLiterally(" ", "%20"), ontologyProperty.trim().replaceAllLiterally(" ", "%20")) ++ <br/>)
+          propSeq.map(x => replaceParams(replaceSimpleProperty(x, templateProperty.trim().replaceAllLiterally(" ", "%20"), ontologyProperty.trim().replaceAllLiterally(" ", "%20"))) ++ <br/>)
         }</p>
     </div>
   }
 
   private def replaceParams(in: String): String =
   {
-    var out = in.replaceAllLiterally("{title}", page.title.encoded.toString())
-    out = out.replaceAllLiterally("{map-to-class}", mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mapToClass.name)
-    out.replaceAllLiterally("{lang}", lang.wikiCode)
+    var out = in.replaceAllLiterally("{TITLE}", page.title.encoded.toString())
+    out = out.replaceAllLiterally("{PAGE-URI}", page.sourceUri)
+    out = out.replaceAllLiterally("{MAP-TO-CLASS}", mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mapToClass.name)
+    out.replaceAllLiterally("{LANG}", lang.wikiCode)
+//    out = "".padTo(indent, ' ') + out
+//    if((out.endsWith(";") || out.endsWith("}")) && indent < 4)
+//    indent = 4
+//    if(out.endsWith(",") && indent < 8)
+//      indent = 8
+//    if(out.endsWith(".") || out.endsWith("]"))
+//      indent = 0
   }
 
-  private def replaceProperty(in: String, templateProperty: String, ontologyProperty: String): String =
+  private def replaceSimpleProperty(in: String, templateProperty: String, ontologyProperty: String): String =
   {
-    var out = in.replaceAllLiterally("\"{template-property}\"", "\"" + templateProperty.replaceAllLiterally("%20", " ") + "\"")
-    out = out.replaceAllLiterally("{template-property}", templateProperty)
-    out.replaceAllLiterally("{ontology-property}", ontologyProperty)
+    var out = in.replaceAllLiterally("\"{TEMPLATE-PROPERTY}\"", "\"" + templateProperty.replaceAllLiterally("%20", " ") + "\"")
+    out = out.replaceAllLiterally("{TEMPLATE-PROPERTY}", templateProperty)
+    out.replaceAllLiterally("{ONTOLOGY-PROPERTY}", ontologyProperty)
   }
 }
