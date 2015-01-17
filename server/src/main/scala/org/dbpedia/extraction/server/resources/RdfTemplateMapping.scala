@@ -86,8 +86,9 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
   {
     var out = in.replaceAllLiterally("{TITLE}", page.title.encoded.toString())
     out = out.replaceAllLiterally("{PAGE-URI}", page.sourceUri)
-    out = out.replaceAllLiterally("{MAP-TO-CLASS}", mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mapToClass.name)
     out = out.replaceAllLiterally("{LANG}", lang.wikiCode)
+    out = out.replaceAllLiterally("{MAP-TO-CLASS}", mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mapToClass.name)
+
     out = "".padTo(indent, ' ') + out
     if((out.endsWith(";") || out.endsWith("}")) && indent < 4)
     indent = 4
@@ -102,6 +103,15 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
   {
     var out = in.replaceAllLiterally("\"{TEMPLATE-PROPERTY}\"", "\"" + templateProperty.replaceAllLiterally("%20", " ") + "\"")
     out = out.replaceAllLiterally("{TEMPLATE-PROPERTY}", templateProperty)
-    out.replaceAllLiterally("{ONTOLOGY-PROPERTY}", ontologyProperty)
+
+    var ontProp = ontologyProperty
+    var dboPrefix = "dbo:"
+    if(ontProp.contains(":"))
+    {
+      dboPrefix = ontProp.substring(0, ontProp.indexOf(':')+1)
+      ontProp = ontProp.substring(ontProp.indexOf(':')+1)
+    }
+    out = out.replaceAllLiterally("{PREFIX}", dboPrefix)
+    out.replaceAllLiterally("{ONTOLOGY-PROPERTY}", ontProp)
   }
 }
