@@ -120,8 +120,8 @@ class Mappings(@PathParam("lang") langCode : String)
    */
   @GET
   @Path("pages/rdf/{title: .+$}")
-  @Produces(Array("application/xml"))
-  def getRmlPage(@PathParam("title") title : String) : Elem =
+  @Produces(Array("text/turtle"))
+  def getRmlPage(@PathParam("title") title : String) : String =
   {
     logger.info("Get mappings page: " + title)
     val parsed = WikiTitle.parse(title, language)
@@ -144,15 +144,10 @@ class Mappings(@PathParam("lang") langCode : String)
     getRdfTemplate(page.head, mappings)
   }
 
-  def getRdfTemplate(page: WikiPage, mappings: org.dbpedia.extraction.mappings.Mappings) : Elem=
+  def getRdfTemplate(page: WikiPage, mappings: org.dbpedia.extraction.mappings.Mappings) : String =
   {
     val rdfTemplate = new RdfTemplateMapping(parser(page).get, language, mappings)
-    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-      {ServerHeader.getHeader("Mappings")}
-      <body>
-            {rdfTemplate.getRdfHttpTemplate()}
-      </body>
-    </html>
+    rdfTemplate.getRdfTemplate()
   }
 
     /**

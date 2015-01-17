@@ -6,7 +6,6 @@ import org.dbpedia.extraction.wikiparser.{PageNode, WikiParser}
 
 import scala.collection.mutable
 import scala.io.{Codec, Source}
-import scala.xml.Elem
 
 /**
  * Created by Chile on 1/14/2015.
@@ -14,6 +13,7 @@ import scala.xml.Elem
 class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.extraction.mappings.Mappings)
 {
   private val file = "/rdfTemplateTemplate.txt"
+  private val builder = new StringBuilder()
   private val rdfTemplate = new mutable.MutableList[String]
   private var indent = 0
 
@@ -43,53 +43,43 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
   protected val parser = WikiParser.getInstance()
 
-  def getRdfHttpTemplate() : Elem =
+  def getRdfTemplate() : String =
   {
     if(mappings.templateMappings.size < 1)
       throw new Exception("No mappings found for " + page.title.decoded) //TODO??
 
-    val mapps = mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mappings.collect
+    builder.clear()
+
+    var mapps :List[SimplePropertyMapping] = null
+    if(mappings.templateMappings.head._2.isInstanceOf[TemplateMapping])
     {
-      case simpleProp : SimplePropertyMapping => simpleProp
+      mapps = mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mappings.collect {
+        case simpleProp: SimplePropertyMapping => simpleProp
+      }
     }
+    else
+      throw new Exception("At this stage only 'simple' TemplateMappings are supported")
 
-    <div>
-      <div>
-        {
-          getHttpRows(prefixSeq)
-        }
-      </div>
-      <div>
-        {getHttpRows(classSeq)}
-      </div>
-      <div>
-        {
-          mapps.map(x =>
-            getHttpPropertyRow(x.asInstanceOf[SimplePropertyMapping].templateProperty,x.asInstanceOf[SimplePropertyMapping].ontologyProperty.name )) ++ <br/>
-        }
-      </div>
-    </div>
+    getHttpRows(prefixSeq)
+    getHttpRows(classSeq)
+    if(mapps != null)
+      mapps.map(x =>
+        getHttpPropertyRow(x.asInstanceOf[SimplePropertyMapping].templateProperty,x.asInstanceOf[SimplePropertyMapping].ontologyProperty.name))
+
+    builder.toString()
   }
 
-  private def getHttpRows(in: mutable.MutableList[String]): Elem =
+  private def getHttpRows(in: mutable.MutableList[String]): Unit =
   {
     indent =0
-      <p>
-        {
-          in.map(x => replaceParams(x) ++ <br/>)
-        }
-      </p>
+    in.map(x => builder.append(replaceParams(x) + "\n"))
   }
 
-  private def getHttpPropertyRow(templateProperty: String, ontologyProperty: String): Elem =
+  private def getHttpPropertyRow(templateProperty: String, ontologyProperty: String): Unit =
   {
     indent =0
-    <div>
-      <p>
-        {
-          propSeq.map(x => replaceParams(replaceSimpleProperty(x, templateProperty.trim().replaceAllLiterally(" ", "%20"), ontologyProperty.trim().replaceAllLiterally(" ", "%20"))) ++ <br/>)
-        }</p>
-    </div>
+    propSeq.map(x => builder.append(replaceParams(replaceSimpleProperty(x, templateProperty.trim().replaceAllLiterally(" ", "%20"), ontologyProperty.trim().replaceAllLiterally(" ", "%20"))) + "\n"))
+
   }
 
   private def replaceParams(in: String): String =
@@ -97,14 +87,15 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
     var out = in.replaceAllLiterally("{TITLE}", page.title.encoded.toString())
     out = out.replaceAllLiterally("{PAGE-URI}", page.sourceUri)
     out = out.replaceAllLiterally("{MAP-TO-CLASS}", mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mapToClass.name)
-    out.replaceAllLiterally("{LANG}", lang.wikiCode)
-//    out = "".padTo(indent, ' ') + out
-//    if((out.endsWith(";") || out.endsWith("}")) && indent < 4)
-//    indent = 4
-//    if(out.endsWith(",") && indent < 8)
-//      indent = 8
-//    if(out.endsWith(".") || out.endsWith("]"))
-//      indent = 0
+    out = out.replaceAllLiterally("{LANG}", lang.wikiCode)
+    out = "".padTo(indent, ' ') + out
+    if((out.endsWith(";") || out.endsWith("}")) && indent < 4)
+    indent = 4
+    if(out.endsWith(",") && indent < 8)
+      indent = 8
+    if(out.endsWith(".") || out.endsWith("]"))
+      indent = 0
+    return out
   }
 
   private def replaceSimpleProperty(in: String, templateProperty: String, ontologyProperty: String): String =
