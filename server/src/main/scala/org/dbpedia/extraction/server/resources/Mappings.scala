@@ -10,7 +10,7 @@ import org.dbpedia.extraction.mappings.{MappingsLoader, Redirects}
 import org.dbpedia.extraction.server.Server
 import org.dbpedia.extraction.server.resources.stylesheets.{Log, TriX}
 import org.dbpedia.extraction.server.util.PageUtils
-import org.dbpedia.extraction.sources.{WikiPage, WikiSource, XMLSource}
+import org.dbpedia.extraction.sources.{WikiSource, XMLSource}
 import org.dbpedia.extraction.util.{Language, WikiApi}
 import org.dbpedia.extraction.wikiparser.{Namespace, WikiParser, WikiTitle}
 
@@ -23,8 +23,8 @@ import scala.xml.{Elem, NodeBuffer}
 class Mappings(@PathParam("lang") langCode : String)
 {
     private val logger = Logger.getLogger(classOf[Mappings].getName)
-
     private val language : Language = Language.getOrElse(langCode, throw new WebApplicationException(new Exception("invalid language "+langCode), 404))
+    private var getAllMappings = false
 
     if(!Server.instance.managers.contains(language))
         throw new WebApplicationException(new Exception("language "+langCode+" not configured in server"), 404)
@@ -121,7 +121,7 @@ class Mappings(@PathParam("lang") langCode : String)
   @GET
   @Path("pages/rdf/{title: .+$}")
   @Produces(Array("text/turtle"))
-  def getRmlPage(@PathParam("title") title : String) : String =
+  def getRdfMapping(@PathParam("title") title : String) : String =
   {
     logger.info("Get mappings page: " + title)
     val parsed = WikiTitle.parse(title, language)
@@ -129,7 +129,10 @@ class Mappings(@PathParam("lang") langCode : String)
     val page = pages.filter(_.title == parsed)
 
     if(page.size != 1)
-      throw new Exception("Cannot get page: " + title + ". Parsing failed")  //TODO??
+      if(getAllMappings)
+        return ""
+      else
+        throw new Exception("Cannot get page: " + title + ". Parsing failed")  //TODO??
 
     // context object that has only this mappingSource
     val context = new {
@@ -140,14 +143,31 @@ class Mappings(@PathParam("lang") langCode : String)
     }
 
     //Load mappings
-    val mappings = MappingsLoader.load(context)
-    getRdfTemplate(page.head, mappings)
+    val rdfTemplate = new RdfTemplateMapping(parser(page.head).get, language, MappingsLoader.load(context))
+    rdfTemplate.getRdfTemplate()
   }
 
-  def getRdfTemplate(page: WikiPage, mappings: org.dbpedia.extraction.mappings.Mappings) : String =
+  /**
+   * Retrieves all rml mapping pages
+   */
+  @GET
+  @Path("pages/rdf/all")
+  @Produces(Array("text/turtle"))
+  def getAllRdfMappings() : String =
   {
-    val rdfTemplate = new RdfTemplateMapping(parser(page).get, language, mappings)
-    rdfTemplate.getRdfTemplate()
+    getAllMappings = true
+    val builder = new StringBuilder()
+    val titles = Server.instance.extractor.mappingPageSource(language).map(x => x.title.encodedWithNamespace.replace(":", "%3A"))
+
+    for(title <- titles) {
+      val zw = try {getRdfMapping(title)}
+      catch {
+        case x => ""
+      }
+      builder.append(zw)
+    }
+    getAllMappings = false
+    builder.toString()
   }
 
     /**

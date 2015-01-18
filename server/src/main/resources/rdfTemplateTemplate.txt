@@ -5,12 +5,11 @@
 @prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 @prefix dbo:    <http://dbpedia.org/ontology/>.
 @prefix foaf:   <http://xmlns.com/foaf/0.1/>.
-@prefix mapping: <http://mappings.dbpedia.org/server/mappings/{LANG}/>.
 
 ## end of init statement
 
 ## class statement
-mapping:{TITLE} a rr:TriplesMap ;
+<http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}> a rr:TriplesMap ;
     rml:logicalSource <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/Source/{MAP-TO-CLASS}> ;
     rr:subjectMap <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/Class/{MAP-TO-CLASS}> .
 
@@ -22,7 +21,7 @@ mapping:{TITLE} a rr:TriplesMap ;
 <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/Class/{MAP-TO-CLASS}> a rr:SubjectMap ;
     rr:constant "http://dbpedia.org/resource/{TITLE}";
     #check: is it dbpprop?
-    rr:class dbo:{MAP-TO-CLASS} ;
+    rr:class <{CLASS-URI}> ;
     rr:termType rr:IRI .
 
 ## end of class statement
@@ -31,9 +30,9 @@ mapping:{TITLE} a rr:TriplesMap ;
 ## simple predicateObject mapping => for loop for all property mappings
 
 ## template mapping {TEMPLATE-PROPERTY} -> {ONTOLOGY-PROPERTY}
-mapping:{TITLE} rr:predicateObjectMap <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/tempProp/{TEMPLATE-PROPERTY}/dboProp/{ONTOLOGY-PROPERTY}> .
+<http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}> rr:predicateObjectMap <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/tempProp/{TEMPLATE-PROPERTY}/dboProp/{ONTOLOGY-PROPERTY}> .
 <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/tempProp/{TEMPLATE-PROPERTY}/dboProp/{ONTOLOGY-PROPERTY}> a rr:PredicateObjectMap ;
-    rr:predicate {PREFIX}{ONTOLOGY-PROPERTY};
+    rr:predicate <{ONTOLOGY-PROPERTY}>;
     rr:objectMap <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/tempProp/{TEMPLATE-PROPERTY}/dboProp/{ONTOLOGY-PROPERTY}/objectMap>.
 <http://mappings.dbpedia.org/server/mappings/{LANG}/{TITLE}/tempProp/{TEMPLATE-PROPERTY}/dboProp/{ONTOLOGY-PROPERTY}/objectMap> a rr:ObjectMap ;
     rml:reference "{TEMPLATE-PROPERTY}".

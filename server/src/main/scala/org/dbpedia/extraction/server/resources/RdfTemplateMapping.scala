@@ -1,6 +1,7 @@
 package org.dbpedia.extraction.server.resources
 
 import org.dbpedia.extraction.mappings.{SimplePropertyMapping, TemplateMapping}
+import org.dbpedia.extraction.server.Server
 import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.wikiparser.{PageNode, WikiParser}
 
@@ -45,20 +46,18 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
   def getRdfTemplate() : String =
   {
-    if(mappings.templateMappings.size < 1)
-      throw new Exception("No mappings found for " + page.title.decoded) //TODO??
-
     builder.clear()
 
     var mapps :List[SimplePropertyMapping] = null
-    if(mappings.templateMappings.head._2.isInstanceOf[TemplateMapping])
-    {
-      mapps = mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mappings.collect {
-        case simpleProp: SimplePropertyMapping => simpleProp
+    if(mappings.templateMappings.size > 0) {
+      if (mappings.templateMappings.head._2.isInstanceOf[TemplateMapping]) {
+        mapps = mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mappings.collect {
+          case simpleProp: SimplePropertyMapping => simpleProp
+        }
       }
+      else
+        throw new Exception("At this stage only 'simple' TemplateMappings are supported")
     }
-    else
-      throw new Exception("At this stage only 'simple' TemplateMappings are supported")
 
     getHttpRows(prefixSeq)
     getHttpRows(classSeq)
@@ -87,7 +86,19 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
     var out = in.replaceAllLiterally("{TITLE}", page.title.encoded.toString())
     out = out.replaceAllLiterally("{PAGE-URI}", page.sourceUri)
     out = out.replaceAllLiterally("{LANG}", lang.wikiCode)
-    out = out.replaceAllLiterally("{MAP-TO-CLASS}", mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mapToClass.name)
+      val mapToClass = mappings.templateMappings.head._2.asInstanceOf[TemplateMapping].mapToClass.name
+
+      if(mapToClass != null) {
+        val dboClass = try{Server.instance.extractor.ontology().classes(mapToClass)}
+          catch{
+            case _ => null
+          }
+        if(dboClass != null)
+          out = out.replaceAllLiterally("{CLASS-URI}", dboClass.uri)
+        else
+          throw new Exception("class " + mapToClass + " could not be resolved")
+        out = out.replaceAllLiterally("{MAP-TO-CLASS}", mapToClass.replace(":", "%3A"))
+      }
 
     out = "".padTo(indent, ' ') + out
     if((out.endsWith(";") || out.endsWith("}")) && indent < 4)
@@ -103,15 +114,11 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
   {
     var out = in.replaceAllLiterally("\"{TEMPLATE-PROPERTY}\"", "\"" + templateProperty.replaceAllLiterally("%20", " ") + "\"")
     out = out.replaceAllLiterally("{TEMPLATE-PROPERTY}", templateProperty)
-
-    var ontProp = ontologyProperty
-    var dboPrefix = "dbo:"
-    if(ontProp.contains(":"))
-    {
-      dboPrefix = ontProp.substring(0, ontProp.indexOf(':')+1)
-      ontProp = ontProp.substring(ontProp.indexOf(':')+1)
+    try {
+      out.replaceAllLiterally("{ONTOLOGY-PROPERTY}", Server.instance.extractor.ontology().properties(ontologyProperty).uri)
     }
-    out = out.replaceAllLiterally("{PREFIX}", dboPrefix)
-    out.replaceAllLiterally("{ONTOLOGY-PROPERTY}", ontProp)
+    catch {
+      case _ => ""
+    }
   }
 }
