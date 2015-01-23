@@ -1,5 +1,4 @@
 package org.dbpedia.extraction.mappings
-import sys.process._
 import org.dbpedia.extraction.dump.extract.Extraction
 
 object Starter {

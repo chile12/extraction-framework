@@ -67,7 +67,7 @@ object ResolveTransitiveLinks {
       for (cycle <- cycles.sortBy(- _.size)) {
         err.println("length "+cycle.size+": ["+cycle.mkString(" ")+"]")
       }
-      
+
       val file = finder.find(output + suffix)
       err.println(language.wikiCode+": writing "+file+" ...")
       val writer = IOUtils.writer(file)

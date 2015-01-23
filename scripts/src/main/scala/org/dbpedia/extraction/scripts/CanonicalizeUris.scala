@@ -1,13 +1,13 @@
 package org.dbpedia.extraction.scripts
 
-import org.dbpedia.extraction.destinations.Quad
-import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.util.SimpleWorkers
+import java.io.File
+
 import org.dbpedia.extraction.util.ConfigUtils.parseLanguages
 import org.dbpedia.extraction.util.RichFile.wrapFile
-import scala.collection.mutable.{Set,HashMap,MultiMap,ArrayBuffer}
-import java.io.File
+import org.dbpedia.extraction.util.{Language, SimpleWorkers}
+
 import scala.Console.err
+import scala.collection.mutable.HashMap
 
 /**
  * Maps old URIs in triple files to new URIs:

@@ -35,10 +35,10 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
   rdfTemplate.reverse
 
   val prefixSeq = rdfTemplate.slice(0,rdfTemplate.lastIndexWhere(_.trim().startsWith("## end of init statement")))
-  var start = rdfTemplate.indexWhere((_.startsWith("## class statement"))) +1
+  var start = rdfTemplate.indexWhere(_.startsWith("## class statement")) +1
   var end = rdfTemplate.indexWhere(_.endsWith("class statement"), start)
   val classSeq = rdfTemplate.slice(start, end)
-  start = rdfTemplate.indexWhere((_.startsWith("## simple predicateObject mapping"))) +1
+  start = rdfTemplate.indexWhere(_.startsWith("## simple predicateObject mapping")) +1
   end = rdfTemplate.indexWhere(_.endsWith("simple predicateObject mapping"), start)
   val propSeq = rdfTemplate.slice(start, end)
 
@@ -102,7 +102,7 @@ class RdfTemplateMapping(page: PageNode, lang: Language, mappings: org.dbpedia.e
 
     out = "".padTo(indent, ' ') + out
     if((out.endsWith(";") || out.endsWith("}")) && indent < 4)
-    indent = 4
+      indent = 4
     if(out.endsWith(",") && indent < 8)
       indent = 8
     if(out.endsWith(".") || out.endsWith("]"))
