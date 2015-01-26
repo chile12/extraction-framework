@@ -1,11 +1,19 @@
 package org.dbpedia.extraction.scripts
 
-import org.dbpedia.extraction.dump.extract.{Config, ConfigLoader}
-import org.dbpedia.extraction.mappings.{MappingsLoader, TemplateMapping}
-import org.dbpedia.extraction.ontology.{OntologyClass, OntologyType}
+import java.io.File
+
+import org.dbpedia.extraction.destinations.formatters.UriPolicy
+import org.dbpedia.extraction.destinations.{CompositeDestination, Destination, Quad, WriterDestination}
+import org.dbpedia.extraction.ontology.{OntologyProperty, OntologyClass}
+import org.dbpedia.extraction.ontology.io.OntologyReader
+import org.dbpedia.extraction.sources.XMLSource
 import org.dbpedia.extraction.util.ConfigUtils._
 import org.dbpedia.extraction.util.RichFile.wrapFile
-import org.dbpedia.extraction.util.{ConfigUtils, Language}
+import org.dbpedia.extraction.util.{IOUtils, Language}
+
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.util.control.Breaks._
 
 /**
  * Created by Chile on 1/22/2015.
@@ -14,56 +22,180 @@ object TypeMappingTest {
 
   def main(args: Array[String]) {
 
-    require(args != null && args.length >= 2,
+    require(args != null && args.length >= 3,
       "need at least five args: " +
-        /*0*/ "config file , " +
-        /*1*/ "languages or article count ranges (e.g. 'en,fr' or '10000-')")
+        /*0*/ "base dir , " +
+        /*1*/ "file format suffix , " +
+        /*2*/ "output format , " //"trix-triples" ,"trix-quads", "turtle-triples", "turtle-quads" ,"n-triples" ,"n-quads" ,"rdf-json"
+    )
 
     require(args(0).nonEmpty, "no config file name")
-    val config = new Config(ConfigUtils.loadConfig(args(0), "UTF-8"))
-    val langMap = new scala.collection.mutable.HashMap[Language, scala.collection.mutable.Map[String, OntologyType]]()
 
-    val baseDir = config.dumpDir
-    val input = "instance-types." + config.formats.head._1
-    require(input.nonEmpty, "no input dataset name")
+    val baseDir = new File(if(args(0).endsWith(("/"))) args(0) else args(0) + "/")
+    val properties = "instance-types." + args(1)
+    require(properties.nonEmpty, "no input dataset name")
+    val ontoFile = new File("C:\\Users\\Chile\\Documents\\GitHub\\extraction-framework\\ontology.xml")
+    val ontology = new OntologyReader().read(XMLSource.fromFile(ontoFile, Language.Mappings))
 
-    // Suffix of DBpedia files, for example ".nt", ".ttl.gz", ".nt.bz2" and so on.
-    // This script works with .nt or .ttl files, using IRIs or URIs.
-    // Does NOT work with .nq or .tql files. (Preserving the context wouldn't make sense.)
+
+    val propFile = "mappingbased-properties." + args(1)
+
+    var mapp: scala.collection.mutable.Map[String, OntologyClass] = null
+
+    val destinations = new ArrayBuffer[Destination]
+    var exceptedFile : File = null
+    var exceptedDest : WriterDestination= null
+    var conjoinedFile : File = null
+    var conjoinedDest : WriterDestination= null
+    var disjoinedFile : File = null
+    var disjoinedDest : WriterDestination= null
+    var noTypeFile : File = null
+    var noTypeDest : WriterDestination = null
+    var destination : CompositeDestination = null
+
+    val rightQuads = new mutable.HashSet[Quad]()
+    val noTypeQuads = new mutable.HashSet[Quad]()
+    val conjQuads = new mutable.HashSet[Quad]()
+    val disjQuads = new mutable.HashSet[Quad]()
 
     // Use all remaining args as keys or comma or whitespace separated lists of keys
-    val languages = parseLanguages(baseDir, args.drop(1))
+    for (dir <- baseDir.listFiles() if (dir.isDirectory() && dir.name.endsWith("wiki"))) {
+      breakable {
+        val languages = parseLanguages(baseDir, Array(dir.getName().diff("wiki")))
 
-    require(languages.nonEmpty, "no languages")
+        require(languages.nonEmpty, "no languages")
 
-    for (language <- languages) {
+        val finder = new DateFinder(baseDir, languages(0))
+        finder.find(null, true)
 
-      val context = new ConfigLoader(config).getContext(language)
-      val mappingsLoader = MappingsLoader.load(context)
-      val finder = new DateFinder(baseDir, language)
+        // use LinkedHashMap to preserve order
+        mapp = new scala.collection.mutable.HashMap[String, OntologyClass]()
 
-      // use LinkedHashMap to preserve order
-      val mapp : scala.collection.mutable.Map[String, OntologyType] = new scala.collection.mutable.HashMap[String, OntologyType]()
+        destination = new CompositeDestination(destinations.toSeq: _*)
+        exceptedFile = finder.find("expected." + args(1))
+        exceptedDest = new WriterDestination(() => IOUtils.writer(exceptedFile), UriPolicy.getFormatter(args(2)))
+        destinations += exceptedDest
+        conjoinedFile = finder.find("conjoined." + args(1))
+        conjoinedDest = new WriterDestination(() => IOUtils.writer(conjoinedFile), UriPolicy.getFormatter(args(2)))
+        destinations += conjoinedDest
+        disjoinedFile = finder.find("disjoined." + args(1))
+        disjoinedDest = new WriterDestination(() => IOUtils.writer(disjoinedFile), UriPolicy.getFormatter(args(2)))
+        destinations += disjoinedDest
+        noTypeFile = finder.find("noType." + args(1))
+        noTypeDest = new WriterDestination(() => IOUtils.writer(noTypeFile), UriPolicy.getFormatter(args(2)))
+        destinations += noTypeDest
+        destination = new CompositeDestination(destinations.toSeq: _*)
 
-      QuadReader.readQuads(finder, input, auto = true) { quad =>
-        if (!mapp.contains(quad.value)) //not!
-        {
-          val tempMap = mappingsLoader.templateMappings.find(x => x._2.isInstanceOf[TemplateMapping] && x._2.asInstanceOf[TemplateMapping].mapToClass.uri == quad.value)
-           if(tempMap != None)
-             mapp(quad.subject) = tempMap.get._2.asInstanceOf[TemplateMapping].mapToClass
-        }
-        else
-        {
-          val tempMap = mappingsLoader.templateMappings.find(x => x._2.isInstanceOf[TemplateMapping] && x._2.asInstanceOf[TemplateMapping].mapToClass.uri == quad.value)
-          if(tempMap != None)
-          {
-            val newClass : OntologyClass = tempMap.get._2.asInstanceOf[TemplateMapping].mapToClass
-            if(newClass.relatedClasses.contains(mapp(quad.value)))
-              mapp(quad.subject) = newClass
+        try {
+          QuadReader.readQuads(finder, properties, auto = true) { quad =>
+            mapProperties(quad)
           }
         }
+        catch {
+          case e: Exception =>
+            Console.err.println(e.printStackTrace())
+            break
+        }
+
+        destination.open()
+
+        try {
+          QuadReader.readQuads(finder, propFile, auto = true) { quad =>
+            evalueQuad(quad)
+          }
+          forceWriteQuads()
+          destination.close()
+        }
+        catch {
+          case e: Exception =>
+            Console.err.println(e.printStackTrace())
+            break
+        }
       }
-      langMap(language) = mapp
+    }
+
+    def mapProperties(quad: Quad): Unit =
+    {
+      breakable {
+        val classOption = ontology.classes.find(x => x._2.uri == quad.value)
+        var ontoClass: OntologyClass = null
+        if (classOption != null && classOption != None)
+          ontoClass = classOption.get._2
+        else
+          break
+        if (!mapp.contains(quad.subject)) //not! {
+          mapp(quad.subject) = ontoClass
+        else {
+          if (ontoClass.relatedClasses.contains(mapp(quad.subject)))
+            mapp(quad.subject) = ontoClass
+        }
+      }
+    }
+
+    def evalueQuad(quad: Quad): Unit =
+    {
+      breakable {
+        if (quad.datatype == null) //object is uri
+        {
+          val obj = try {
+            mapp(quad.value)
+          } catch {
+            case default => null
+          }
+          val predOpt = ontology.properties.find(x => x._2.uri == quad.predicate)
+          var predicate: OntologyProperty = null
+          if (predOpt != null && predOpt != None)
+            predicate = predOpt.get._2
+
+          if (predicate != null && predicate.range.uri.trim() == "http://www.w3.org/2002/07/owl#Thing") {
+            rightQuads += quad
+            break
+          }
+          else if (obj == null || obj == None) {
+            noTypeQuads += quad
+            break
+          }
+          else if (predicate == null) {
+            //weired stuff
+          }
+
+          if (obj.relatedClasses.contains(predicate.range))
+            rightQuads += quad
+          else {
+            if (obj.disjointWithClasses.contains(predicate.range.asInstanceOf[OntologyClass]))
+              disjQuads += quad
+            else
+              conjQuads += quad
+          }
+        }
+        else
+          rightQuads += quad
+
+        writeQuads()
+      }
+    }
+
+    def forceWriteQuads(): Unit = {
+      writeQuads(true)
+    }
+
+    def writeQuads(forceWrite: Boolean = false): Unit = {
+      if (conjQuads.size > 999 || forceWrite) {
+        conjoinedDest.write(conjQuads)
+        conjQuads.clear()
+      }
+      if (disjQuads.size > 999 || forceWrite) {
+        disjoinedDest.write(disjQuads)
+        disjQuads.clear()
+      }
+      if (rightQuads.size > 999 || forceWrite) {
+        exceptedDest.write(rightQuads)
+        rightQuads.clear()
+      }
+      if (noTypeQuads.size > 999 || forceWrite) {
+        noTypeDest.write(noTypeQuads)
+        noTypeQuads.clear()
+      }
     }
   }
 }

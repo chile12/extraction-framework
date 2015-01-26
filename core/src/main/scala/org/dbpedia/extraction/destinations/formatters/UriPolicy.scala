@@ -105,6 +105,17 @@ object UriPolicy {
     "rdf-json" -> { new RDFJSONFormatter(_) }
   )
 
+  def getFormatter(key: String) : Formatter =
+  {
+    getFormatter(key, null)
+  }
+
+  def getFormatter(key: String, policies : Array[Policy]) : Formatter =
+  {
+    val formatter = formatters.getOrElse(key, throw error("first value for key '"+key+"' is '"+key+"' but must be one of "+formatters.keys.toSeq.sorted.mkString("'","','","'")))
+    formatter.apply(policies)
+  }
+
   /**
    * Parse all URI policy and format lines.
    * @param uriPolicyPrefix property key prefix, e.g. "uri-policy"

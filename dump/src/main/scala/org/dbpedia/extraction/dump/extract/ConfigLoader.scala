@@ -51,7 +51,6 @@ class ConfigLoader(config: Config)
      */
     private def createExtractionJob(lang : Language, extractorClasses: Seq[Class[_ <: Extractor[_]]]) : ExtractionJob =
     {
-      val M
       val finder = new Finder[File](config.dumpDir, lang, config.wikiName)
 
       val date = latestDate(finder)
@@ -59,7 +58,7 @@ class ConfigLoader(config: Config)
       val context = getContext(lang)
 
       //Extractors
-      val extractor = CompositeParseExtractor.load(extractorClasses.col, context)
+      val extractor = CompositeParseExtractor.load(extractorClasses, context)
       val datasets = extractor.datasets
 
       val formatDestinations = new ArrayBuffer[Destination]()
