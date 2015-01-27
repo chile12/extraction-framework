@@ -4,7 +4,7 @@ import java.io.File
 
 import org.dbpedia.extraction.destinations.formatters.UriPolicy
 import org.dbpedia.extraction.destinations.{CompositeDestination, Destination, Quad, WriterDestination}
-import org.dbpedia.extraction.ontology.{OntologyProperty, OntologyClass}
+import org.dbpedia.extraction.ontology.{OntologyClass, OntologyProperty}
 import org.dbpedia.extraction.ontology.io.OntologyReader
 import org.dbpedia.extraction.sources.XMLSource
 import org.dbpedia.extraction.util.ConfigUtils._
@@ -26,7 +26,7 @@ object TypeMappingTest {
       "need at least five args: " +
         /*0*/ "base dir , " +
         /*1*/ "file format suffix , " +
-        /*2*/ "output format , " //"trix-triples" ,"trix-quads", "turtle-triples", "turtle-quads" ,"n-triples" ,"n-quads" ,"rdf-json"
+        /*2*/ "output format" //"trix-triples" ,"trix-quads", "turtle-triples", "turtle-quads" ,"n-triples" ,"n-quads" ,"rdf-json"
     )
 
     require(args(0).nonEmpty, "no config file name")
@@ -58,6 +58,9 @@ object TypeMappingTest {
     val conjQuads = new mutable.HashSet[Quad]()
     val disjQuads = new mutable.HashSet[Quad]()
 
+    val relatedClasses = new mutable.HashSet[(OntologyClass, OntologyClass)]
+    val disjoinedClasses = new mutable.HashSet[(OntologyClass, OntologyClass)]
+
     // Use all remaining args as keys or comma or whitespace separated lists of keys
     for (dir <- baseDir.listFiles() if (dir.isDirectory() && dir.name.endsWith("wiki"))) {
       breakable {
@@ -72,7 +75,7 @@ object TypeMappingTest {
         mapp = new scala.collection.mutable.HashMap[String, OntologyClass]()
 
         destination = new CompositeDestination(destinations.toSeq: _*)
-        exceptedFile = finder.find("expected." + args(1))
+        exceptedFile = finder.find("excepted." + args(1))
         exceptedDest = new WriterDestination(() => IOUtils.writer(exceptedFile), UriPolicy.getFormatter(args(2)))
         destinations += exceptedDest
         conjoinedFile = finder.find("conjoined." + args(1))
@@ -97,9 +100,8 @@ object TypeMappingTest {
             break
         }
 
-        destination.open()
-
         try {
+          destination.open()
           QuadReader.readQuads(finder, propFile, auto = true) { quad =>
             evalueQuad(quad)
           }
@@ -162,7 +164,7 @@ object TypeMappingTest {
           if (obj.relatedClasses.contains(predicate.range))
             rightQuads += quad
           else {
-            if (obj.disjointWithClasses.contains(predicate.range.asInstanceOf[OntologyClass]))
+            if (isDisjoined(obj, predicate.range.asInstanceOf[OntologyClass], true))
               disjQuads += quad
             else
               conjQuads += quad
@@ -196,6 +198,42 @@ object TypeMappingTest {
         noTypeDest.write(noTypeQuads)
         noTypeQuads.clear()
       }
+    }
+
+
+    def isDisjoined(objClass : OntologyClass, rangeClass : OntologyClass, clear: Boolean = true) : Boolean = {
+
+      if (clear)
+        relatedClasses.clear()
+
+      if(disjoinedClasses.contains((objClass, rangeClass)))
+        return true
+
+      if(objClass.disjointWithClasses.contains(rangeClass)) {
+        disjoinedClasses.add(objClass, rangeClass)
+        disjoinedClasses.add(rangeClass, objClass)
+        return true
+      }
+      if(rangeClass.disjointWithClasses.contains(objClass)) {
+        disjoinedClasses.add(objClass, rangeClass)
+        disjoinedClasses.add(rangeClass, objClass)
+        return true
+      }
+      relatedClasses.add(objClass, rangeClass)
+      relatedClasses.add(rangeClass, objClass)
+      for (objClazz <- objClass.relatedClasses) {
+        for(rangeClazz <- rangeClass.relatedClasses) {
+          if (!relatedClasses.contains(objClazz, rangeClazz)) { //not!
+            if (isDisjoined(objClazz, rangeClazz, false))
+              return true
+          }
+          if (!relatedClasses.contains(rangeClazz, objClazz)) { //not!
+            if (isDisjoined(rangeClazz, objClazz, false))
+              return true
+          }
+        }
+      }
+      return false
     }
   }
 }
