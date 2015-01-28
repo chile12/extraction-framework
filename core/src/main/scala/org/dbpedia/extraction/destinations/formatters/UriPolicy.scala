@@ -106,6 +106,18 @@ object UriPolicy {
   )
 
   /**
+   * returns a single Formatter by intended format
+   * @param key the formatter key (see formatters)
+   * @param policies which apply to the Formatter
+   * @return the Formatter
+   */
+  def getFormatter(key: String, policies : Array[Policy] = null) : Formatter =
+  {
+    val formatter = formatters.getOrElse(key, throw error("formatter key is '"+key+"' but must be one of "+formatters.keys.toSeq.sorted.mkString("'","','","'")))
+    formatter.apply(policies)
+  }
+
+  /**
    * Parse all URI policy and format lines.
    * @param uriPolicyPrefix property key prefix, e.g. "uri-policy"
    * @param formatPrefix format key prefix, e.g. "format"
