@@ -9,21 +9,21 @@ import org.dbpedia.extraction.util.Language
  */
 object QuadBuilder {
 
-  def apply(language: Language, dataset: Dataset, predicate: OntologyProperty, datatype: Datatype) (subject: String, value: String, context: String) =
-    new Quad(language, dataset, subject, predicate, value, context, datatype)
+  def apply(language: Language, dataset: Dataset, predicate: OntologyProperty, datatype: Datatype) (subject: String, value: String, context: String, line: Int) =
+    new Quad(language, dataset, subject, predicate, value, context, datatype, line)
   
-  def dynamicType(language: Language, dataset: Dataset, predicate: OntologyProperty) (subject: String, value: String, context: String, datatype: Datatype) =
-    new Quad(language, dataset, subject, predicate, value, context, datatype)
+  def dynamicType(language: Language, dataset: Dataset, predicate: OntologyProperty) (subject: String, value: String, context: String, datatype: Datatype, line: Int) =
+    new Quad(language, dataset, subject, predicate, value, context, datatype, line)
   
-  def stringPredicate(language: Language, dataset: Dataset, predicate: String) (subject: String, value: String, context: String, datatype: Datatype) =
-    new Quad(language, dataset, subject, predicate, value, context, datatype)
+  def stringPredicate(language: Language, dataset: Dataset, predicate: String) (subject: String, value: String, context: String, datatype: Datatype, line: Int) =
+    new Quad(language, dataset, subject, predicate, value, context, datatype, line)
   
-  def stringPredicate(language: Language, dataset: Dataset, predicate: String, datatype: Datatype) (subject: String, value: String, context: String) =
-    new Quad(language, dataset, subject, predicate, value, context, datatype)
+  def stringPredicate(language: Language, dataset: Dataset, predicate: String, datatype: Datatype) (subject: String, value: String, context: String, line: Int) =
+    new Quad(language, dataset, subject, predicate, value, context, datatype, line)
   
-  def dynamicPredicate(language: Language, dataset: Dataset) (subject: String, predicate: String, value: String, context: String, datatype: Datatype) =
-    new Quad(language, dataset, subject, predicate, value, context, datatype)
+  def dynamicPredicate(language: Language, dataset: Dataset) (subject: String, predicate: String, value: String, context: String, datatype: Datatype, line: Int) =
+    new Quad(language, dataset, subject, predicate, value, context, datatype, line)
   
-  def dynamicPredicate(language: Language, dataset: Dataset, datatype: Datatype) (subject: String, predicate: OntologyProperty, value: String, context: String) =
-    new Quad(language, dataset, subject, predicate, value, context, datatype)
+  def dynamicPredicate(language: Language, dataset: Dataset, datatype: Datatype) (subject: String, predicate: OntologyProperty, value: String, context: String, line: Int) =
+    new Quad(language, dataset, subject, predicate, value, context, datatype, line)
 }

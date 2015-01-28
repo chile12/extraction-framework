@@ -15,6 +15,7 @@ import Quad._
  * @param value URI/IRI or literal, must not be null
  * @param context URI/IRI, may be null
  * @param datatype may be null, which means that value is a URI/IRI
+ * @param line line number of quad
  * 
  * TODO: the order of the parameters is confusing. As in Turtle/N-Triple/N-Quad files, it should be
  * 
@@ -25,6 +26,7 @@ import Quad._
  * datatype
  * language
  * context
+ * line
  */
 class Quad(
   val language: String,
@@ -33,7 +35,8 @@ class Quad(
   val predicate: String,
   val value: String,
   val context: String,
-  val datatype: String
+  val datatype: String,
+  val line: Int
 )
 extends Ordered[Quad]
 with Equals
@@ -46,7 +49,8 @@ with Equals
     predicate: String,
     value: String,
     context: String,
-    datatype: Datatype
+    datatype: Datatype,
+    line: Int
   ) = this(
     if (language == null) null else language.isoCode,
       dataset.name,
@@ -54,7 +58,8 @@ with Equals
       predicate,
       value,
       context,
-      if (datatype == null) null else datatype.uri
+      if (datatype == null) null else datatype.uri,
+      line
     )
 
   def this(
@@ -64,7 +69,8 @@ with Equals
     predicate: OntologyProperty,
     value: String,
     context: String,
-    datatype: Datatype = null
+    datatype: Datatype = null,
+    line: Int
   ) = this(
       language,
       dataset,
@@ -72,7 +78,8 @@ with Equals
       predicate.uri,
       value,
       context,
-      findType(datatype, predicate.range)
+      findType(datatype, predicate.range),
+      line
     )
 
 
@@ -88,7 +95,8 @@ with Equals
     value: String = this.value,
     datatype: String = this.datatype,
     language: String = this.language,
-    context: String = this.context
+    context: String = this.context,
+    line: Int = this.line
   ) = new Quad(
     language,
     dataset,
@@ -96,7 +104,8 @@ with Equals
     predicate,
     value,
     context,
-    datatype
+    datatype,
+    line
   )
   
   override def toString() = {
@@ -286,7 +295,7 @@ object Quad
     index = skipSpace(line, index)
     if (index != length) return None
     
-    Some(new Quad(language, null, subject, predicate, value, context, datatype))
+    Some(new Quad(language, null, subject, predicate, value, context, datatype, -1))
   }
   
   private def skipSpace(line: String, start: Int): Int = {

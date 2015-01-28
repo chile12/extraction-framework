@@ -1,11 +1,11 @@
 package org.dbpedia.extraction.mappings
 
-import org.dbpedia.extraction.destinations.{QuadBuilder, DBpediaDatasets, Quad}
-import org.dbpedia.extraction.wikiparser._
+import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
 import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.{Language, ExtractorUtils}
+import org.dbpedia.extraction.util.{ExtractorUtils, Language}
+import org.dbpedia.extraction.wikiparser._
+
 import scala.language.reflectiveCalls
-import org.dbpedia.extraction.util.StringUtils._
 
 /**
  * Extracts the number of external links to DBpedia instances from the internal page links between
@@ -33,6 +33,7 @@ extends PageNodeExtractor
     
     val ìnternalLinks = PageLinksExtractor.collectInternalLinks(node)
 
-    Seq(new Quad(context.language, DBpediaDatasets.OutDegree, subjectUri, wikiPageOutDegreeProperty, ìnternalLinks.size.toString, node.sourceUri, nonNegativeInteger) )
+    //TODO change line number??
+    Seq(new Quad(context.language, DBpediaDatasets.OutDegree, subjectUri, wikiPageOutDegreeProperty, ìnternalLinks.size.toString, node.sourceUri, nonNegativeInteger, -1) )
   }
 }

@@ -135,13 +135,13 @@ extends PropertyMapping
     {
       instanceUri = pageContext.generateUri(subjectUri, ontologyProperty.name)
 
-      quads += new Quad(context.language,  DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, instanceUri, sourceUri)
+      quads += new Quad(context.language,  DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, instanceUri, sourceUri, null, node.line)
     }
 
-    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, typeOntProperty, featureOntClass.uri, sourceUri)
-    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, latOntProperty, coord.latitude.toString, sourceUri)
-    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, lonOntProperty, coord.longitude.toString, sourceUri)
-    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, pointOntProperty, coord.latitude + " " + coord.longitude, sourceUri)
+    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, typeOntProperty, featureOntClass.uri, sourceUri, null, node.line)
+    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, latOntProperty, coord.latitude.toString, sourceUri, null, node.line)
+    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, lonOntProperty, coord.longitude.toString, sourceUri, null, node.line)
+    quads += new Quad(context.language, DBpediaDatasets.OntologyProperties, instanceUri, pointOntProperty, coord.latitude + " " + coord.longitude, sourceUri, null, node.line)
 
     quads
   }

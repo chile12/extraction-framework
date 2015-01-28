@@ -1,21 +1,13 @@
 package org.dbpedia.extraction.mappings
 
-import org.dbpedia.extraction.wikiparser._
-import org.dbpedia.extraction.sources.{WikiPage, XMLSource}
-import org.dbpedia.extraction.destinations.{QuadBuilder, Quad}
-import org.dbpedia.extraction.destinations.formatters.TerseFormatter
-import org.dbpedia.extraction.ontology.io.OntologyReader
-import io.Source
+import org.dbpedia.extraction.destinations.Quad
+import org.dbpedia.extraction.ontology.{Ontology, OntologyProperty}
+import org.dbpedia.extraction.sources.WikiPage
 import org.dbpedia.extraction.util.Language
-import java.io.{FilenameFilter, File}
-import scala.collection.mutable.ArrayBuffer
-import org.junit.Test
-import org.dbpedia.extraction.ontology.{OntologyProperty, Ontology}
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.dbpedia.extraction.wikiparser._
 import org.junit.runner.RunWith
-import org.dbpedia.extraction.dataparser.BooleanParser
+import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.junit.JUnitRunner
 
 /**
  *
@@ -28,7 +20,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null, -1)
     )
 
     parse(
@@ -44,7 +36,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null, -1)
     )
 
     parse(
@@ -60,7 +52,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://correct.example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://correct.example.com", null, null, -1)
     )
 
     parse(
@@ -77,7 +69,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null, -1)
     )
 
     parse(
@@ -93,7 +85,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null, -1)
     )
 
     parse("""{{Infobox | website = example.com}}""", "TestPage", lang) should equal (quad)
@@ -103,7 +95,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null, -1)
     )
 
     parse("""{{Infobox | website = http://example.com}}""", "TestPage", lang) should equal (quad)
@@ -113,7 +105,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null, -1)
     )
 
     parse("""{{Infobox | website = http://example.com or http://or.com}}""", "TestPage", lang) should equal (quad)
@@ -123,7 +115,7 @@ class HomepageExtractorTest extends FlatSpec with Matchers
 
     val lang = Language.English
     val quad : Seq[Quad] = HomepageExtractorTest.datasets.toList.map(dataset =>
-      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null)
+      new Quad(lang, dataset, "TestPage", HomepageExtractorTest.homepageProperty, "http://example.com", null, null, -1)
     )
 
     parse("""{{Infobox | website = N/A}}""", "TestPage", lang) should equal (Seq.empty)

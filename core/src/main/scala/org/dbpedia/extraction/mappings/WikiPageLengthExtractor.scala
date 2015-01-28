@@ -1,11 +1,12 @@
 package org.dbpedia.extraction.mappings
 
-import org.dbpedia.extraction.destinations.{QuadBuilder, DBpediaDatasets, Quad}
-import org.dbpedia.extraction.wikiparser._
+import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
 import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.{Language, ExtractorUtils}
-import scala.language.reflectiveCalls
 import org.dbpedia.extraction.sources.WikiPage
+import org.dbpedia.extraction.util.{ExtractorUtils, Language}
+import org.dbpedia.extraction.wikiparser._
+
+import scala.language.reflectiveCalls
 
 /**
  * Extracts the number of characters in a wikipedia page
@@ -27,7 +28,8 @@ extends WikiPageExtractor
   {
     if(page.title.namespace != Namespace.Main && !ExtractorUtils.titleContainsCommonsMetadata(page.title)) 
         return Seq.empty
-    
-    Seq(new Quad(context.language, DBpediaDatasets.PageLength, subjectUri, wikiPageLengthProperty, page.source.length.toString, page.sourceUri, nonNegativeInteger) )
+
+    //TODO change line number
+    Seq(new Quad(context.language, DBpediaDatasets.PageLength, subjectUri, wikiPageLengthProperty, page.source.length.toString, page.sourceUri, nonNegativeInteger, -1) )
   }
 }

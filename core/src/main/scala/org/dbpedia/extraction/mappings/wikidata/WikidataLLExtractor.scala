@@ -1,13 +1,13 @@
 package org.dbpedia.extraction.mappings
 
+import org.dbpedia.extraction.destinations.{Dataset, Quad}
 import org.dbpedia.extraction.ontology.Ontology
 import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.destinations.{Dataset, Quad, DBpediaDatasets}
-import org.dbpedia.extraction.wikiparser.{WikiTitle, JsonNode, Namespace, PageNode}
-import collection.mutable.ArrayBuffer
-import scala.language.reflectiveCalls
+import org.dbpedia.extraction.wikiparser.{JsonNode, Namespace, WikiTitle}
+
 import scala.collection.JavaConversions._
-import org.dbpedia.extraction.wikiparser.Namespace
+import scala.collection.mutable.ArrayBuffer
+import scala.language.reflectiveCalls
 
 /*
 * Extract Wikidata sitelinks on the form of
@@ -51,7 +51,7 @@ class WikidataLLExtractor(
                     val sitelink1 = WikiTitle.parse(siteLink.getPageTitle().toString(), dbpedia_lang1)
                     val sitelink2 = WikiTitle.parse(siteLink2.getPageTitle().toString(), dbpedia_lang2)
                     quads += new Quad(context.language, datasetMap(lang1), sitelink1.resourceIri,
-                      sameAsProperty, sitelink2.resourceIri, page.wikiPage.sourceUri, null)
+                      sameAsProperty, sitelink2.resourceIri, page.wikiPage.sourceUri, null, page.line)
                   }
                   case _ =>
                 }

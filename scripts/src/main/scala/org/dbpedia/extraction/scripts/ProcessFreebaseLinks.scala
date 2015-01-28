@@ -1,24 +1,19 @@
 package org.dbpedia.extraction.scripts
 
 import java.io.File
-import org.apache.commons.lang3.StringEscapeUtils
+
+import org.dbpedia.extraction.destinations.formatters.UriPolicy.parseFormats
+import org.dbpedia.extraction.destinations.{CompositeDestination, Destination, Quad, WriterDestination}
+import org.dbpedia.extraction.ontology.RdfNamespace
+import org.dbpedia.extraction.util.ConfigUtils.{getString, getStrings, getValue, loadConfig, parseLanguages}
+import org.dbpedia.extraction.util.IOUtils.{readLines, writer}
+import org.dbpedia.extraction.util.RichFile.wrapFile
+import org.dbpedia.extraction.util.StringUtils.prettyMillis
+import org.dbpedia.extraction.util.{Finder, StringUtils, WikiUtil}
+import org.dbpedia.util.text.uri.UriDecoder
 
 import scala.Console.err
-import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer,HashMap,TreeSet}
-import org.dbpedia.extraction.util.StringUtils.prettyMillis
-import org.dbpedia.extraction.util.ConfigUtils.{loadConfig,parseLanguages,getString,getValue,getStrings}
-import org.dbpedia.extraction.destinations.formatters.UriPolicy.parseFormats
-import org.dbpedia.extraction.destinations.formatters.Formatter
-import org.dbpedia.extraction.destinations.{Quad,Destination,CompositeDestination,WriterDestination}
-import org.dbpedia.extraction.util.{Language,Finder}
-import org.dbpedia.extraction.util.RichFile.wrapFile
-import org.dbpedia.extraction.util.RichReader.wrapReader
-import org.dbpedia.extraction.util.IOUtils.{readLines,writer}
-import org.dbpedia.extraction.ontology.RdfNamespace
-import org.dbpedia.util.text.uri.UriDecoder
-import org.dbpedia.extraction.util.WikiUtil
-import org.dbpedia.extraction.util.StringUtils
+import scala.collection.mutable.{ArrayBuffer, HashMap, TreeSet}
 
 /**
  * See https://developers.google.com/freebase/data for a reference of the Freebase RDF data dumps
@@ -173,7 +168,7 @@ DBpedia and Freebase URIs and create a Quad from them.
     // Also, some Freebase URIs contain percent signs that we need to encode.
     title = StringUtils.escape(title, replacements)
     
-    return new Quad(lang, null, "http://"+lang+".dbpedia.org/resource/"+title, sameAs, "http://rdf.freebase.com/ns/m."+mid, null, null)
+    return new Quad(lang, null, "http://"+lang+".dbpedia.org/resource/"+title, sameAs, "http://rdf.freebase.com/ns/m."+mid, null, null, -1)
   }
 
   /**

@@ -194,7 +194,7 @@ extends PropertyMapping
                 val g = parseResult match
                 {
                     case (value : Double, unit : UnitDatatype) => writeUnitValue(node, value, unit, subjectUri, propertyNode.sourceUri)
-                    case value => writeValue(value, subjectUri, propertyNode.sourceUri)
+                    case value => writeValue(value, subjectUri, propertyNode.sourceUri, propertyNode.line)
                 }
 
                 graph ++= g
@@ -209,7 +209,7 @@ extends PropertyMapping
         //TODO better handling of inconvertible units
         if(unit.isInstanceOf[InconvertibleUnitDatatype])
         {
-            val quad = new Quad(language, DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, value.toString, sourceUri, unit)
+            val quad = new Quad(language, DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, value.toString, sourceUri, unit, node.line)
             return Seq(quad)
         }
 
@@ -218,7 +218,7 @@ extends PropertyMapping
         
         val graph = new ArrayBuffer[Quad]
 
-        graph += new Quad(language, DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, stdValue.toString, sourceUri, new Datatype("xsd:double"))
+        graph += new Quad(language, DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, stdValue.toString, sourceUri, new Datatype("xsd:double"), node.line)
         
         // Write specific properties
         // FIXME: copy-and-paste in CalculateMapping
@@ -230,7 +230,7 @@ extends PropertyMapping
                  val outputValue = specificPropertyUnit.fromStandardUnit(stdValue)
                  val propertyUri = DBpediaNamespace.ONTOLOGY.append(currentClass.name+'/'+ontologyProperty.name)
                  val quad = new Quad(language, DBpediaDatasets.SpecificProperties, subjectUri,
-                                     propertyUri, outputValue.toString, sourceUri, specificPropertyUnit)
+                                     propertyUri, outputValue.toString, sourceUri, specificPropertyUnit, node.line)
                  graph += quad
             }
         }
@@ -238,10 +238,10 @@ extends PropertyMapping
         graph
     }
 
-    private def writeValue(value : Any, subjectUri : String, sourceUri : String): Seq[Quad] =
+    private def writeValue(value : Any, subjectUri : String, sourceUri : String, line: Int): Seq[Quad] =
     {
         val datatype = if(ontologyProperty.range.isInstanceOf[Datatype]) ontologyProperty.range.asInstanceOf[Datatype] else null
 
-        Seq(new Quad(language, DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, value.toString, sourceUri, datatype))
+        Seq(new Quad(language, DBpediaDatasets.OntologyProperties, subjectUri, ontologyProperty, value.toString, sourceUri, datatype, line))
     }
 }

@@ -1,10 +1,10 @@
 package org.dbpedia.extraction.mappings
 
-import java.lang.String
-import org.dbpedia.extraction.wikiparser.PageNode
 import org.dbpedia.extraction.destinations.{Dataset, Quad}
-import collection.mutable.{HashSet, Set, MultiMap, HashMap}
-import io.Source
+import org.dbpedia.extraction.wikiparser.PageNode
+
+import scala.collection.mutable.{HashMap, HashSet, MultiMap, Set}
+import scala.io.Source
 
 
 
@@ -91,7 +91,7 @@ class AugmenterExtractor(val decoratee : PageNodeExtractor, val dataset : Datase
           val resources = relatedResources(categoryName, labelToURIs)
 
           resources.foreach(res => {
-            val newQuad = new Quad(quad.language, dataset.name, quad.subject, relationPredicate, res, quad.context, null)
+            val newQuad = new Quad(quad.language, dataset.name, quad.subject, relationPredicate, res, quad.context, null, quad.line)
 
             newQuads.add(newQuad)
           })

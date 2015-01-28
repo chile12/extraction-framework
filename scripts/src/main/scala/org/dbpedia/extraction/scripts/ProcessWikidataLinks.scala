@@ -1,24 +1,21 @@
 package org.dbpedia.extraction.scripts
 
-import java.util.Arrays.{copyOf,sort}
-import java.io.{File,Writer}
+import java.io.{File, Writer}
+import java.util.Arrays.{copyOf, sort}
+
+import org.dbpedia.extraction.destinations.formatters.Formatter
+import org.dbpedia.extraction.destinations.formatters.UriPolicy.parseFormats
+import org.dbpedia.extraction.destinations.{CompositeDestination, Destination, Quad, WriterDestination}
+import org.dbpedia.extraction.ontology.RdfNamespace
+import org.dbpedia.extraction.scripts.ProcessWikidataLinks._
+import org.dbpedia.extraction.util.ConfigUtils.{getString, getStrings, getValue, loadConfig, parseLanguages}
+import org.dbpedia.extraction.util.RichFile.wrapFile
+import org.dbpedia.extraction.util.{Finder, IOUtils, Language, SimpleWorkers}
+import org.dbpedia.extraction.util.StringUtils.prettyMillis
+
 import scala.Console.err
 import scala.collection.Map
-import scala.collection.mutable.{HashMap,ArrayBuffer}
-import org.dbpedia.extraction.util.{Finder,Language}
-import org.dbpedia.extraction.util.ConfigUtils.{loadConfig,parseLanguages,getString,getValue,getStrings}
-import org.dbpedia.extraction.util.IOUtils
-import org.dbpedia.extraction.util.RichFile.wrapFile
-import org.dbpedia.extraction.util.RichReader.wrapReader
-import org.dbpedia.extraction.util.StringUtils.prettyMillis
-import org.dbpedia.extraction.ontology.RdfNamespace
-import org.dbpedia.extraction.destinations.{Destination,Quad,WriterDestination}
-import org.dbpedia.extraction.util.Finder
-import org.dbpedia.extraction.destinations.formatters.UriPolicy.parseFormats
-import org.dbpedia.extraction.destinations.formatters.Formatter
-import org.dbpedia.extraction.destinations.CompositeDestination
-import org.dbpedia.extraction.util.SimpleWorkers
-import ProcessWikidataLinks._
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 /**
  * Generate separate triple files for each language from Wikidata link file.
@@ -312,7 +309,7 @@ class ProcessWikidataLinks(baseDir: File) {
                 
                 val objUri = uris(objLang)
                 if (objUri != null && subjLang != objLang) {
-                  quads += new Quad(null, null, subjUri, sameAs, objUri, pageUri, null: String)
+                  quads += new Quad(null, null, subjUri, sameAs, objUri, pageUri, null: String, -1)
                 }
                 
                 objLang += 1

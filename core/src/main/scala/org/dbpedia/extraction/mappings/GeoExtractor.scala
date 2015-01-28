@@ -38,23 +38,23 @@ extends PageNodeExtractor
     // Iterate through all root templates.
     // Not recursing into templates as these are presumed to be handled by template-based mechanisms (GeoCoordinatesMapping).
     for( 
-      templateNode @ TemplateNode(_, _, _, _) <- page.children;
+      templateNode @ TemplateNode(_, _, line, _) <- page.children;
       coordinate <- geoCoordinateParser.parse(templateNode) 
     )
     {
-      return writeGeoCoordinate(coordinate, subjectUri, page.sourceUri, pageContext)
+      return writeGeoCoordinate(coordinate, subjectUri, page.sourceUri, pageContext, line)
     }
 
     Seq.empty
   }
 
-  private def writeGeoCoordinate(coord : GeoCoordinate, subjectUri : String, sourceUri : String, pageContext : PageContext) : Seq[Quad] =
+  private def writeGeoCoordinate(coord : GeoCoordinate, subjectUri : String, sourceUri : String, pageContext : PageContext, line: Int) : Seq[Quad] =
   {
     val quads = new ArrayBuffer[Quad]()
-    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, typeOntProperty, featureOntClass.uri, sourceUri)
-    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, latOntProperty, coord.latitude.toString, sourceUri)
-    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, lonOntProperty, coord.longitude.toString, sourceUri)
-    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, pointOntProperty, coord.latitude + " " + coord.longitude, sourceUri)
+    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, typeOntProperty, featureOntClass.uri, sourceUri, null, line)
+    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, latOntProperty, coord.latitude.toString, sourceUri, null, line)
+    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, lonOntProperty, coord.longitude.toString, sourceUri, null, line)
+    quads += new Quad(context.language, DBpediaDatasets.GeoCoordinates, subjectUri, pointOntProperty, coord.latitude + " " + coord.longitude, sourceUri, null, line)
     quads
   }
 }

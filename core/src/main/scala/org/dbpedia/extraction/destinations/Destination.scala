@@ -12,9 +12,9 @@ trait Destination
   def open(): Unit
   
   /**
-   * Writes quads to this destination. Implementing classes should make sure that this method
-   * can safely be executed concurrently by multiple threads.
-   */
+ * Writes quads to this destination. Implementing classes should make sure that this method
+ * can safely be executed concurrently by multiple threads.
+ */
   def write(graph : Traversable[Quad]): Unit
 
   /**

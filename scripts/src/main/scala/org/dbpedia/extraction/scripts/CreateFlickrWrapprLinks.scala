@@ -1,24 +1,18 @@
 package org.dbpedia.extraction.scripts
 
-import scala.Console.err
 import java.io.File
-import org.dbpedia.extraction.util.RichFile.wrapFile
-import org.dbpedia.extraction.util.ConfigUtils.{loadConfig,parseLanguages,getString,getValue,getStrings}
+
 import org.dbpedia.extraction.destinations.formatters.UriPolicy.parseFormats
-import scala.collection.Set
-import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer,HashSet}
-import org.dbpedia.extraction.destinations.{Quad,Destination,CompositeDestination,WriterDestination}
+import org.dbpedia.extraction.destinations.{CompositeDestination, Destination, Quad, WriterDestination}
+import org.dbpedia.extraction.util.ConfigUtils.{getString, getStrings, getValue, loadConfig, parseLanguages}
 import org.dbpedia.extraction.util.IOUtils.writer
-import org.dbpedia.extraction.util.Finder
-import org.dbpedia.extraction.ontology.RdfNamespace
-import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.wikiparser.Namespace
-import org.dbpedia.extraction.util.TurtleUtils
+import org.dbpedia.extraction.util.RichFile.wrapFile
+import org.dbpedia.extraction.util.{Finder, Language, StringUtils, TurtleUtils, WikiUtil}
+import org.dbpedia.extraction.wikiparser.{Namespace, WikiTitle}
 import org.dbpedia.util.text.uri.UriDecoder
-import org.dbpedia.extraction.util.StringUtils
-import org.dbpedia.extraction.util.WikiUtil
-import org.dbpedia.extraction.wikiparser.WikiTitle
+
+import scala.Console.err
+import scala.collection.mutable.{ArrayBuffer, HashSet}
 
 object CreateFlickrWrapprLinks {
   
@@ -123,7 +117,7 @@ object CreateFlickrWrapprLinks {
       for (title <- titles) {
         val subj = subjPrefix + title
         val obj = objPrefix + title
-        quads(0) = new Quad(null, null, subj, pred, obj, null, null: String)
+        quads(0) = new Quad(null, null, subj, pred, obj, null, null: String, -1)
         destination.write(quads)
         count += 1
         if (count % 100000 == 0) logWrite(language.wikiCode, count, startNanos)

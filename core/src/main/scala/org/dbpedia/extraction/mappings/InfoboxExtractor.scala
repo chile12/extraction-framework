@@ -131,14 +131,14 @@ extends PageNodeExtractor
                         val propertyUri = getPropertyUri(property.key)
                         try
                         {
-                            quads += new Quad(language, DBpediaDatasets.InfoboxProperties, subjectUri, propertyUri, value, splitNode.sourceUri, datatype)
+                            quads += new Quad(language, DBpediaDatasets.InfoboxProperties, subjectUri, propertyUri, value, splitNode.sourceUri, datatype, splitNode.line)
 
                             if (InfoboxExtractorConfig.extractTemplateStatistics) 
                             {
                             	val stat_template = language.resourceUri.append(template.title.decodedWithNamespace)
                             	val stat_property = property.key.replace("\n", " ").replace("\t", " ").trim
                             	quads += new Quad(language, DBpediaDatasets.InfoboxTest, subjectUri, stat_template,
-                                               stat_property, node.sourceUri, ontology.datatypes("xsd:string"))
+                                               stat_property, node.sourceUri, ontology.datatypes("xsd:string"), splitNode.line)
                             }
                         }
                         catch
@@ -152,8 +152,8 @@ extends PageNodeExtractor
                             {
                                 val propertyLabel = getPropertyLabel(property.key)
                                 seenProperties += propertyUri
-                                quads += new Quad(language, DBpediaDatasets.InfoboxPropertyDefinitions, propertyUri, typeProperty, propertyClass.uri, splitNode.sourceUri)
-                                quads += new Quad(language, DBpediaDatasets.InfoboxPropertyDefinitions, propertyUri, labelProperty, propertyLabel, splitNode.sourceUri, new Datatype("rdf:langString"))
+                                quads += new Quad(language, DBpediaDatasets.InfoboxPropertyDefinitions, propertyUri, typeProperty, propertyClass.uri, splitNode.sourceUri, null, splitNode.line)
+                                quads += new Quad(language, DBpediaDatasets.InfoboxPropertyDefinitions, propertyUri, labelProperty, propertyLabel, splitNode.sourceUri, new Datatype("rdf:langString"), splitNode.line)
                             }
                         }
                     }

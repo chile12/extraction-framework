@@ -1,19 +1,16 @@
 package org.dbpedia.extraction.mappings
 
-import java.util.logging.Logger
-import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
-import org.dbpedia.extraction.wikiparser._
-import impl.wikipedia.Namespaces
-import org.dbpedia.extraction.sources.Source
-import collection.mutable.{HashSet, Set => MutableSet}
-import java.math.BigInteger
-import java.security.MessageDigest
-import org.dbpedia.extraction.config.mappings.ImageExtractorConfig
-import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.{Language, WikiUtil, ExtractorUtils}
 import java.net.URLDecoder
-import org.dbpedia.extraction.util.RichString.wrapString
-import scala.collection.mutable.ArrayBuffer
+import java.util.logging.Logger
+
+import org.dbpedia.extraction.config.mappings.ImageExtractorConfig
+import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
+import org.dbpedia.extraction.ontology.Ontology
+import org.dbpedia.extraction.sources.Source
+import org.dbpedia.extraction.util.{ExtractorUtils, Language, WikiUtil}
+import org.dbpedia.extraction.wikiparser._
+
+import scala.collection.mutable.{ArrayBuffer, HashSet, Set => MutableSet}
 import scala.language.reflectiveCalls
 
 /**
@@ -72,14 +69,14 @@ extends PageNodeExtractor
             val url = ExtractorUtils.getFileURL(imageFileName, lang)
             val thumbnailUrl = ExtractorUtils.getThumbnailURL(imageFileName, lang)
 
-            quads += new Quad(language, DBpediaDatasets.Images, subjectUri, foafDepictionProperty, url, sourceNode.sourceUri)
-            quads += new Quad(language, DBpediaDatasets.Images, subjectUri, dbpediaThumbnailProperty, thumbnailUrl, sourceNode.sourceUri)
-            quads += new Quad(language, DBpediaDatasets.Images, url, foafThumbnailProperty, thumbnailUrl, sourceNode.sourceUri)
+            quads += new Quad(language, DBpediaDatasets.Images, subjectUri, foafDepictionProperty, url, sourceNode.sourceUri, null, sourceNode.line)
+            quads += new Quad(language, DBpediaDatasets.Images, subjectUri, dbpediaThumbnailProperty, thumbnailUrl, sourceNode.sourceUri, null, sourceNode.line)
+            quads += new Quad(language, DBpediaDatasets.Images, url, foafThumbnailProperty, thumbnailUrl, sourceNode.sourceUri, null, sourceNode.line)
 
             val wikipediaImageUrl = language.baseUri+"/wiki/"+fileNamespaceIdentifier+":"+imageFileName
 
-            quads += new Quad(language, DBpediaDatasets.Images, url, dcRightsProperty, wikipediaImageUrl, sourceNode.sourceUri)
-            quads += new Quad(language, DBpediaDatasets.Images, thumbnailUrl, dcRightsProperty, wikipediaImageUrl, sourceNode.sourceUri)
+            quads += new Quad(language, DBpediaDatasets.Images, url, dcRightsProperty, wikipediaImageUrl, sourceNode.sourceUri, null, sourceNode.line)
+            quads += new Quad(language, DBpediaDatasets.Images, thumbnailUrl, dcRightsProperty, wikipediaImageUrl, sourceNode.sourceUri, null, sourceNode.line)
         }
 
         quads
@@ -103,7 +100,7 @@ extends PageNodeExtractor
                          textNode @ TextNode(text, _) <- property.children;
                          fileName <- ImageExtractorConfig.ImageRegex.findFirstIn(text);
                          encodedFileName = if (encodedLinkRegex.findFirstIn(fileName) == None)
-                                               WikiUtil.wikiEncode(fileName).capitalize(language.locale)
+                                               WikiUtil.wikiEncode(fileName).capitalize
                                            else
                                                fileName
                          if checkImageRights(encodedFileName))
@@ -114,7 +111,7 @@ extends PageNodeExtractor
                 }
                 case (linkNode @ InternalLinkNode(destination, _, _, _)) if destination.namespace == Namespace.File =>
                 {
-                    for (fileName <- ImageExtractorConfig.ImageLinkRegex.findFirstIn(destination.encoded);
+                    for (fileName <- ImageExtractorConfig.ImageLinkRegex.findFirstIn(destination.encoded.toString())
                          if checkImageRights(fileName))
                     {
                         return Some((fileName, linkNode))
@@ -194,8 +191,8 @@ private object ImageExtractor
         {
             ImageExtractorConfig.NonFreeRegex(wikiCode).findFirstIn(page.source) match
             {
-                case Some(_) => nonFreeImages += page.title.encoded
-                case None => if (freeImages != null) freeImages += page.title.encoded
+                case Some(_) => nonFreeImages += page.title.encoded.toString()
+                case None => if (freeImages != null) freeImages += page.title.encoded.toString()
             }
         }
 
