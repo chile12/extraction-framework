@@ -6,7 +6,7 @@ import java.net.URL
 import org.dbpedia.extraction.destinations.formatters.{Formatter, UriPolicy}
 import org.dbpedia.extraction.destinations.formatters.UriPolicy._
 import org.dbpedia.extraction.destinations._
-import org.dbpedia.extraction.ontology.{OntologyClass, OntologyProperty}
+import org.dbpedia.extraction.ontology.{Ontology, OntologyClass, OntologyProperty}
 import org.dbpedia.extraction.ontology.io.OntologyReader
 import org.dbpedia.extraction.sources.{WikiSource, XMLSource}
 import org.dbpedia.extraction.util.RichFile.wrapFile
@@ -31,6 +31,8 @@ object TypeConsistencyCheck {
   val nonDisjointDataset = new Dataset("mappingbased-properties-non-disjoint");
   
   val datasets = Seq(correctDataset, disjointDataset, untypedDataset, nonDisjointDataset)
+
+  val propertyMap = new scala.collection.mutable.HashMap[String, OntologyProperty]
 
   def main(args: Array[String]) {
 
@@ -98,7 +100,7 @@ object TypeConsistencyCheck {
         destination.open()
         QuadReader.readQuads(lang.wikiCode+": Reading types from " + mappedTripleDataset, finder.file(date, mappedTripleDataset)) { quad =>
 
-          val correctDataset = evalueQuad(quad)
+          val correctDataset = checkQuad(quad)
           val q = quad.copy(language = lang.wikiCode, dataset = correctDataset.name) //set the language of the Quad
           destination.write(Seq(q))
         }
@@ -131,42 +133,46 @@ object TypeConsistencyCheck {
       }
     }
 
-    def evalueQuad(quad: Quad): Dataset =
+    /**
+     * Chacks a Quad and returns the new dataset where it should be written depending on the state
+     * @param quad
+     * @return
+     */
+    def checkQuad(quad: Quad): Dataset =
     {
+      if (quad.datatype != null) {
+        return correctDataset
+      }
 
-        if (quad.datatype == null) //object is uri
-        {
-          val obj = try {
-            mapp(quad.value)
-          } catch {
-            case default => null
-          }
-          val predOpt = ontology.properties.find(x => x._2.uri == quad.predicate)
-          var predicate: OntologyProperty = null
-          if (predOpt != null && predOpt != None)
-            predicate = predOpt.get._2
+      //object is uri
+      val obj = try {
+        mapp(quad.value)
+      } catch {
+        case _: Throwable => return untypedDataset
+      }
 
-          if (predicate != null && predicate.range.uri.trim() == "http://www.w3.org/2002/07/owl#Thing") {
-            return correctDataset
-          }
-          else if (obj == null || obj == None) {
-            return untypedDataset
-          }
-          else if (predicate == null) {
-            //weired stuff
-          }
+      val predicate = getProperty(quad.predicate, ontology)
 
-          if (obj.relatedClasses.contains(predicate.range))
-            return correctDataset
-          else {
-            if (isDisjoined(obj, predicate.range.asInstanceOf[OntologyClass], true))
-              return disjointDataset
-            else
-              return nonDisjointDataset
-          }
-        }
+
+      if (predicate != null && predicate.range.uri.trim().equals("http://www.w3.org/2002/07/owl#Thing")) {
+        return correctDataset
+      }
+      else if (obj == null || obj == None) {
+        return untypedDataset
+      }
+      else if (predicate == null) {
+        //weired stuff
+      }
+
+      if (obj.relatedClasses.contains(predicate.range))
+        return correctDataset
+      else {
+        if (isDisjoined(obj, predicate.range.asInstanceOf[OntologyClass], true))
+          return disjointDataset
         else
-          return correctDataset
+          return nonDisjointDataset
+      }
+
     }
 
     def isDisjoined(objClass : OntologyClass, rangeClass : OntologyClass, clear: Boolean = true) : Boolean = {
@@ -202,6 +208,21 @@ object TypeConsistencyCheck {
         }
       }
       return false
+    }
+  }
+
+  // returns an ontologyProperty from a URI and keeps a local cache
+  private def getProperty(uri: String, ontology: Ontology) : OntologyProperty = {
+
+    if (propertyMap.contains(uri)) {
+      propertyMap(uri)
+    } else {
+      val predicateOpt = ontology.properties.find(x => x._2.uri == uri)
+      val predicate: OntologyProperty =
+        if (predicateOpt != null && predicateOpt != None) { predicateOpt.get._2 }
+        else (null)
+      propertyMap.put(uri, predicate);
+      predicate
     }
   }
 
