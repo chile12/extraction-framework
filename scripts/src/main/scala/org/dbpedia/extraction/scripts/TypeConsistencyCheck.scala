@@ -1,18 +1,20 @@
 package org.dbpedia.extraction.scripts
 
-import java.io.File
+import java.io.{Writer, File}
+import java.net.URL
 
-import org.dbpedia.extraction.destinations.formatters.UriPolicy
-import org.dbpedia.extraction.destinations.{CompositeDestination, Destination, Quad, WriterDestination}
+import org.dbpedia.extraction.destinations.formatters.{Formatter, UriPolicy}
+import org.dbpedia.extraction.destinations.formatters.UriPolicy._
+import org.dbpedia.extraction.destinations._
 import org.dbpedia.extraction.ontology.{OntologyClass, OntologyProperty}
 import org.dbpedia.extraction.ontology.io.OntologyReader
-import org.dbpedia.extraction.sources.XMLSource
-import org.dbpedia.extraction.util.ConfigUtils._
+import org.dbpedia.extraction.sources.{WikiSource, XMLSource}
 import org.dbpedia.extraction.util.RichFile.wrapFile
-import org.dbpedia.extraction.util.{IOUtils, Language}
+import org.dbpedia.extraction.util.{Finder, ConfigUtils, IOUtils, Language}
+import org.dbpedia.extraction.wikiparser.Namespace
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{HashMap, ArrayBuffer}
 import scala.util.control.Breaks._
 
 /**
@@ -20,101 +22,96 @@ import scala.util.control.Breaks._
  */
 object TypeConsistencyCheck {
 
+  /**
+   * different datasets where we store the mapped triples depending on their state
+   */
+  val correctDataset = new Dataset("mappingbased-properties-correct");
+  val disjointDataset = new Dataset("mappingbased-properties-disjoint");
+  val untypedDataset = new Dataset("mappingbased-properties-untyped");
+  val nonDisjointDataset = new Dataset("mappingbased-properties-non-disjoint");
+  
+  val datasets = Seq(correctDataset, disjointDataset, untypedDataset, nonDisjointDataset)
+
   def main(args: Array[String]) {
 
-    require(args != null && args.length >= 3,
-      "need at least five args: " +
-        /*0*/ "base dir , " +
-        /*1*/ "file format suffix , " +
-        /*2*/ "output format" //"trix-triples" ,"trix-quads", "turtle-triples", "turtle-quads" ,"n-triples" ,"n-quads" ,"rdf-json"
-    )
 
-    require(args(0).nonEmpty, "no config file name")
-
-    val baseDir = new File(if(args(0).endsWith(("/"))) args(0) else args(0) + "/")
-    val properties = "instance-types." + args(1)
-    require(properties.nonEmpty, "no input dataset name")
-    val ontoFile = new File("C:\\Users\\Chile\\Documents\\GitHub\\extraction-framework\\ontology.xml")
-    val ontology = new OntologyReader().read(XMLSource.fromFile(ontoFile, Language.Mappings))
+    require(args != null && args.length == 2, "Two arguments required, extraction config file and extension to work with")
+    require(args(0).nonEmpty, "missing required argument: config file name")
+    require(args(1).nonEmpty, "missing required argument: suffix e.g. .ttl.gz")
 
 
-    val propFile = "mappingbased-properties." + args(1)
+    val config = ConfigUtils.loadConfig(args(0), "UTF-8")
+
+    val baseDir = ConfigUtils.getValue(config, "base-dir", true)(new File(_))
+    if (!baseDir.exists) throw new IllegalArgumentException("dir " + baseDir + " does not exist")
+    val langConfString = ConfigUtils.getString(config, "languages", false)
+    val languages = ConfigUtils.parseLanguages(baseDir, Seq(langConfString))
+
+    val formats = parseFormats(config, "uri-policy", "format")
+
+    lazy val ontology = {
+      val ontologyFile = ConfigUtils.getValue(config, "ontology", false)(new File(_))
+      val ontologySource = if (ontologyFile != null && ontologyFile.isFile) {
+        XMLSource.fromFile(ontologyFile, Language.Mappings)
+      }
+      else {
+        val namespaces = Set(Namespace.OntologyClass, Namespace.OntologyProperty)
+        val url = new URL(Language.Mappings.apiUri)
+        WikiSource.fromNamespaces(namespaces, url, Language.Mappings)
+      }
+
+      new OntologyReader().read(ontologySource)
+    }
+
+    val suffix = args(1)
+    val typesDataset = "instance-types." + suffix
+    val mappedTripleDataset = "mappingbased-properties." + suffix
 
     var mapp: scala.collection.mutable.Map[String, OntologyClass] = null
-
-    val destinations = new ArrayBuffer[Destination]
-    var exceptedFile : File = null
-    var exceptedDest : WriterDestination= null
-    var conjoinedFile : File = null
-    var conjoinedDest : WriterDestination= null
-    var disjoinedFile : File = null
-    var disjoinedDest : WriterDestination= null
-    var noTypeFile : File = null
-    var noTypeDest : WriterDestination = null
-    var destination : CompositeDestination = null
-
-    val rightQuads = new mutable.HashSet[Quad]()
-    val noTypeQuads = new mutable.HashSet[Quad]()
-    val conjQuads = new mutable.HashSet[Quad]()
-    val disjQuads = new mutable.HashSet[Quad]()
 
     val relatedClasses = new mutable.HashSet[(OntologyClass, OntologyClass)]
     val disjoinedClasses = new mutable.HashSet[(OntologyClass, OntologyClass)]
 
-    // Use all remaining args as keys or comma or whitespace separated lists of keys
-    for (dir <- baseDir.listFiles() if (dir.isDirectory() && dir.name.endsWith("wiki"))) {
-      breakable {
-        val languages = parseLanguages(baseDir, Array(dir.getName().diff("wiki")))
+    mapp = new scala.collection.mutable.HashMap[String, OntologyClass]()
 
-        require(languages.nonEmpty, "no languages")
+    for (lang <- languages) {
 
-        val finder = new DateFinder(baseDir, languages(0))
-        finder.find(null, true)
+      // create destination for this language
+      val finder = new Finder[File](baseDir, lang, "wiki")
+      val date = finder.dates().last
+      val destination = createDestination(finder, date, formats)
 
-        // use LinkedHashMap to preserve order
-        mapp = new scala.collection.mutable.HashMap[String, OntologyClass]()
-
-        destination = new CompositeDestination(destinations.toSeq: _*)
-        exceptedFile = finder.find("excepted." + args(1))
-        exceptedDest = new WriterDestination(() => IOUtils.writer(exceptedFile), UriPolicy.getFormatter(args(2)))
-        destinations += exceptedDest
-        conjoinedFile = finder.find("conjoined." + args(1))
-        conjoinedDest = new WriterDestination(() => IOUtils.writer(conjoinedFile), UriPolicy.getFormatter(args(2)))
-        destinations += conjoinedDest
-        disjoinedFile = finder.find("disjoined." + args(1))
-        disjoinedDest = new WriterDestination(() => IOUtils.writer(disjoinedFile), UriPolicy.getFormatter(args(2)))
-        destinations += disjoinedDest
-        noTypeFile = finder.find("noType." + args(1))
-        noTypeDest = new WriterDestination(() => IOUtils.writer(noTypeFile), UriPolicy.getFormatter(args(2)))
-        destinations += noTypeDest
-        destination = new CompositeDestination(destinations.toSeq: _*)
-
-        try {
-          QuadReader.readQuads(finder, properties, auto = true) { quad =>
-            mapProperties(quad)
-          }
-        }
-        catch {
-          case e: Exception =>
-            Console.err.println(e.printStackTrace())
-            break
-        }
-
-        try {
-          destination.open()
-          QuadReader.readQuads(finder, propFile, auto = true) { quad =>
-            evalueQuad(quad)
-          }
-          forceWriteQuads()
-          destination.close()
-        }
-        catch {
-          case e: Exception =>
-            Console.err.println(e.printStackTrace())
-            break
+      try {
+        QuadReader.readQuads(lang.wikiCode+": Reading types from "+typesDataset, finder.file(date, typesDataset)) { quad =>
+          val q = quad.copy(language = lang.wikiCode) //set the language of the Quad
+          mapProperties(quad)
         }
       }
+      catch {
+        case e: Exception =>
+          Console.err.println(e.printStackTrace())
+          break
+      }
+
+
+      try {
+        destination.open()
+        QuadReader.readQuads(lang.wikiCode+": Reading types from " + mappedTripleDataset, finder.file(date, mappedTripleDataset)) { quad =>
+
+          val correctDataset = evalueQuad(quad)
+          val q = quad.copy(language = lang.wikiCode, dataset = correctDataset.name) //set the language of the Quad
+          destination.write(Seq(q))
+        }
+        destination.close()
+      }
+      catch {
+        case e: Exception =>
+          Console.err.println(e.printStackTrace())
+          break
+      }
     }
+
+
 
     def mapProperties(quad: Quad): Unit =
     {
@@ -134,9 +131,9 @@ object TypeConsistencyCheck {
       }
     }
 
-    def evalueQuad(quad: Quad): Unit =
+    def evalueQuad(quad: Quad): Dataset =
     {
-      breakable {
+
         if (quad.datatype == null) //object is uri
         {
           val obj = try {
@@ -150,56 +147,27 @@ object TypeConsistencyCheck {
             predicate = predOpt.get._2
 
           if (predicate != null && predicate.range.uri.trim() == "http://www.w3.org/2002/07/owl#Thing") {
-            rightQuads += quad
-            break
+            return correctDataset
           }
           else if (obj == null || obj == None) {
-            noTypeQuads += quad
-            break
+            return untypedDataset
           }
           else if (predicate == null) {
             //weired stuff
           }
 
           if (obj.relatedClasses.contains(predicate.range))
-            rightQuads += quad
+            return correctDataset
           else {
             if (isDisjoined(obj, predicate.range.asInstanceOf[OntologyClass], true))
-              disjQuads += quad
+              return disjointDataset
             else
-              conjQuads += quad
+              return nonDisjointDataset
           }
         }
         else
-          rightQuads += quad
-
-        writeQuads()
-      }
+          return correctDataset
     }
-
-    def forceWriteQuads(): Unit = {
-      writeQuads(true)
-    }
-
-    def writeQuads(forceWrite: Boolean = false): Unit = {
-      if (conjQuads.size > 999 || forceWrite) {
-        conjoinedDest.write(conjQuads)
-        conjQuads.clear()
-      }
-      if (disjQuads.size > 999 || forceWrite) {
-        disjoinedDest.write(disjQuads)
-        disjQuads.clear()
-      }
-      if (rightQuads.size > 999 || forceWrite) {
-        exceptedDest.write(rightQuads)
-        rightQuads.clear()
-      }
-      if (noTypeQuads.size > 999 || forceWrite) {
-        noTypeDest.write(noTypeQuads)
-        noTypeQuads.clear()
-      }
-    }
-
 
     def isDisjoined(objClass : OntologyClass, rangeClass : OntologyClass, clear: Boolean = true) : Boolean = {
 
@@ -235,5 +203,23 @@ object TypeConsistencyCheck {
       }
       return false
     }
+  }
+
+  private def createDestination(finder: Finder[File], date: String, formats: scala.collection.Map[String, Formatter]) : Destination = {
+    val destination = new ArrayBuffer[Destination]()
+    for ((suffix, format) <- formats) {
+      val datasetDestinations = new HashMap[String, Destination]()
+      for (dataset <- datasets) {
+        val file = finder.file(date, dataset.name.replace('_', '-')+'.'+suffix)
+        datasetDestinations(dataset.name) = new WriterDestination(writer(file), format)
+      }
+
+      destination += new DatasetDestination(datasetDestinations)
+    }
+    new CompositeDestination(destination.toSeq: _*)
+  }
+
+  private def writer(file: File): () => Writer = {
+    () => IOUtils.writer(file)
   }
 }
