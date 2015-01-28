@@ -35,7 +35,7 @@ class SPARULDelAllDestination(subjects: HashSet[String], policies: Array[Policy]
     for (res <- subjects) {
       if (!res.contains("dbpedia.org/property") && !res.trim.isEmpty) {
         //hack! we only need the uri escape here otherwise we need to create a new formatter / builder
-        val dummyTriple = formatter.render(new Quad(language,"",res, res, res,"", "", -1))
+        val dummyTriple = formatter.render(new Quad(language,"",res, res, res,"", ""))
         val uri = dummyTriple.substring(dummyTriple.indexOf("<")+1, dummyTriple.indexOf("> "))
         val sparul = "SPARQL DELETE FROM <" + LiveOptions.options.get("graphURI") + "> \n{?s ?p ?o} \nWHERE {?s ?p ?o. \nFILTER(?s = <" + uri + ">)\n}"
         JDBCUtil.execSPARUL(sparul)

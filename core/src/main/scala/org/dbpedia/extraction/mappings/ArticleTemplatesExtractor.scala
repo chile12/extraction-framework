@@ -35,7 +35,7 @@ class ArticleTemplatesExtractor(
       val templateUri = context.language.resourceUri.append(template.title.decodedWithNamespace)
       if (!seenTemplates.contains(templateUri)) {
         quads += new Quad(context.language, DBpediaDatasets.ArticleTemplates, subjectUri, usesTemplateProperty,
-          templateUri, template.sourceUri, null, template.line)
+          templateUri, template.sourceUri, null)
         seenTemplates.add(templateUri)
       }
     }

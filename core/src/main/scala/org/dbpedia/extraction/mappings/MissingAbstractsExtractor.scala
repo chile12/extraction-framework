@@ -1,20 +1,18 @@
 package org.dbpedia.extraction.mappings
 
-import java.io._
-import java.net.URL
-import java.util.logging.{Level, Logger}
-
-import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad, QuadBuilder}
-import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.wikiparser._
-import org.dbpedia.util.text.ParseExceptionIgnorer
-import org.dbpedia.util.text.html.{HtmlCoder, XmlCodes}
-
 import scala.collection.mutable
+import scala.xml.XML
 import scala.io.Source
 import scala.language.reflectiveCalls
-import scala.xml.XML
+import java.io._
+import java.net.{URLEncoder, URL}
+import java.util.logging.{Logger, Level}
+import org.dbpedia.extraction.destinations.{DBpediaDatasets,Quad,QuadBuilder}
+import org.dbpedia.extraction.wikiparser._
+import org.dbpedia.extraction.ontology.Ontology
+import org.dbpedia.extraction.util.Language
+import org.dbpedia.util.text.html.{HtmlCoder, XmlCodes}
+import org.dbpedia.util.text.ParseExceptionIgnorer
 
 /**
  * Extracts page abstracts which are not yet extracted. For each page which is a candidate for extraction
@@ -110,8 +108,8 @@ extends PageNodeExtractor
           val shortText = short(text)
 
           //Create statements
-          val quadLong = longQuad(subjectUri, text, pageNode.sourceUri, pageNode.line)
-          val quadShort = shortQuad(subjectUri, shortText, pageNode.sourceUri, pageNode.line)
+          val quadLong = longQuad(subjectUri, text, pageNode.sourceUri)
+          val quadShort = shortQuad(subjectUri, shortText, pageNode.sourceUri)
 
           if (shortText.isEmpty) {
             Seq(quadLong)

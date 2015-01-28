@@ -1,11 +1,10 @@
 package org.dbpedia.extraction.mappings
 
-import org.dbpedia.extraction.config.mappings.TopicalConceptsExtractorConfig
-import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
-import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.wikiparser._
-
+import org.dbpedia.extraction.ontology.Ontology
+import org.dbpedia.extraction.util.{WikiUtil, Language}
+import org.dbpedia.extraction.config.mappings.TopicalConceptsExtractorConfig
+import org.dbpedia.extraction.destinations.{DBpediaDatasets, Dataset, Quad}
 import scala.language.reflectiveCalls
 
 /**
@@ -54,17 +53,13 @@ extends PageNodeExtractor
                         subjectUri,
                         skosSubjectProperty,
                         mainResource,
-                        template.sourceUri,
-                        null,
-                        template.line) ::
+                        template.sourceUri) ::
                     new Quad(context.language,
                         DBpediaDatasets.TopicalConcepts,
                         mainResource,
                         rdfTypeProperty,
                         skosSubjectClass.uri,
-                        template.sourceUri,
-                        null,
-                        template.line)
+                        template.sourceUri)
                     :: Nil)
                 }
 

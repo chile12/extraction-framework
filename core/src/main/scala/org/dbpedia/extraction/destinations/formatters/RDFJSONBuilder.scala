@@ -53,7 +53,7 @@ class RDFJSONBuilder(policies: Array[Policy] = null)
   }
 
   override def end(context: String): Unit = {
-    this add " } },"
+    this add " } },\n"
   }
 
   override def result = sb.toString
@@ -102,10 +102,4 @@ class RDFJSONBuilder(policies: Array[Policy] = null)
     this
   }
 
-  override def lineNo(line: Int): Unit =
-  {
-    sb append " #" + line
-  }
-
-  override def newLine(): Unit = sb append "\n"
 }

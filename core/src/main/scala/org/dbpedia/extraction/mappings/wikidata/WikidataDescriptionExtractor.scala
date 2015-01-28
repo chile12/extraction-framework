@@ -39,7 +39,7 @@ class WikidataDescriptionExtractor (
       val description = value.toString().replace("(" + lang + ")", "").trim()
       Language.get(lang) match
       {
-        case Some(dbpedia_lang) => quads += new Quad(dbpedia_lang, DBpediaDatasets.WikidataDescription, subjectUri, aliasProperty,description, page.wikiPage.sourceUri, context.ontology.datatypes("rdf:langString"), page.line)
+        case Some(dbpedia_lang) => quads += new Quad(dbpedia_lang, DBpediaDatasets.WikidataDescription, subjectUri, aliasProperty,description, page.wikiPage.sourceUri, context.ontology.datatypes("rdf:langString"))
         case _=>
       }
     }

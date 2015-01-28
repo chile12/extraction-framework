@@ -1,18 +1,17 @@
 package org.dbpedia.extraction.mappings
 
-import java.io.{File, FilenameFilter}
-
-import org.dbpedia.extraction.destinations.Quad
-import org.dbpedia.extraction.destinations.formatters.TerseFormatter
-import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.ontology.io.OntologyReader
-import org.dbpedia.extraction.sources.XMLSource
-import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.wikiparser._
-import org.junit.Test
-
+import org.dbpedia.extraction.sources.{FileSource,XMLSource}
+import org.dbpedia.extraction.destinations.{Quad, DBpediaDatasets, Dataset}
+import org.dbpedia.extraction.destinations.formatters.TerseFormatter
+import org.dbpedia.extraction.ontology.io.OntologyReader
+import io.Source
+import org.dbpedia.extraction.util.Language
+import java.io.{FilenameFilter, File}
+import java.lang.IllegalStateException
 import scala.collection.mutable.ArrayBuffer
-import scala.io.Source
+import org.junit.{Ignore, Test}
+import org.dbpedia.extraction.ontology.Ontology
 import scala.language.reflectiveCalls
 
 /**
@@ -133,12 +132,10 @@ class InfoboxExtractorTest
 		var quads = new ArrayBuffer[Quad]()
 		println("gold standard file : " + folder + "/" + fileName)
 		val lines = Source.fromFile(folder + "/" + fileName, "UTF-8").getLines() //.mkString("").replaceAll("\\s+", " ")
-		var lineCount =0
 		for(line <- lines){
-			lineCount = lineCount+1
 			Quad.unapply(line) match {
 				case Some(s) => {
-					quads += new Quad(language.isoCode,"",s.subject,s.predicate,s.value,s.context,s.datatype,lineCount)
+					quads += new Quad(language.isoCode,"",s.subject,s.predicate,s.value,s.context,s.datatype)
 				}
 				case None =>
 			}

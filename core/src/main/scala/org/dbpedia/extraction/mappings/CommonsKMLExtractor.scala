@@ -1,13 +1,12 @@
 package org.dbpedia.extraction.mappings
 
 import java.util.logging.Logger
-
-import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
+import org.dbpedia.extraction.destinations.{DBpediaDatasets,Quad}
+import org.dbpedia.extraction.wikiparser._
 import org.dbpedia.extraction.ontology.Ontology
 import org.dbpedia.extraction.ontology.datatypes.Datatype
-import org.dbpedia.extraction.sources.WikiPage
 import org.dbpedia.extraction.util.Language
-
+import org.dbpedia.extraction.sources.WikiPage
 import scala.language.reflectiveCalls
 
 /**
@@ -64,8 +63,7 @@ extends WikiPageExtractor
             hasKMLDataProperty,
             result.group("kml_content"),
             page.sourceUri,
-            new Datatype("rdf:XMLLiteral"),
-            -1
+            new Datatype("rdf:XMLLiteral")
         ))
 
         kmlContentQuads.toSeq

@@ -58,9 +58,7 @@ extends UriTripleBuilder(policies) {
   
   override def end(context: String): Unit = {
     this endTag "triple"
-    this.newLine()
-    this endTag "graph"
-    this.newLine()
+    this endTag "graph" 
   }
   
   override def result = sb.toString
@@ -93,7 +91,7 @@ extends UriTripleBuilder(policies) {
    */
   private def endTag(name: String): Unit = {
     depth -= 1
-    this add spaces(depth) add ("</") add(name) add (">")
+    this add spaces(depth) add ("</") add(name) add (">\n")
   }
   
   private def add(s: String): TriXBuilder = { 
@@ -105,11 +103,5 @@ extends UriTripleBuilder(policies) {
     sb append c
     this 
   }
-
-  override def lineNo(line: Int): Unit =
-  {
-    sb append " #" + line
-  }
-
-  override def newLine(): Unit = sb append "\n"
+  
 }

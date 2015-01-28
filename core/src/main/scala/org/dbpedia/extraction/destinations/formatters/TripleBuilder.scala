@@ -1,5 +1,7 @@
 package org.dbpedia.extraction.destinations.formatters
 
+import org.dbpedia.extraction.destinations.Quad
+
 /**
  * Helps to render one triple/quad.
  * 
@@ -18,12 +20,8 @@ trait TripleBuilder {
   def plainLiteral(value: String, isoLang: String): Unit
   
   def typedLiteral(value: String, datatype: String): Unit
-
-  def lineNo(line: Int): Unit
-
+  
   def end(context: String): Unit
-
-  def newLine(): Unit
   
   def result(): String
 }

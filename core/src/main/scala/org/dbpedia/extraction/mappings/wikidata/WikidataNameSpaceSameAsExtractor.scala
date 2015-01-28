@@ -1,11 +1,10 @@
 package org.dbpedia.extraction.mappings
 
-import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
 import org.dbpedia.extraction.ontology.Ontology
 import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.wikiparser.JsonNode
-
-import scala.collection.mutable.ArrayBuffer
+import org.dbpedia.extraction.destinations.{Quad, DBpediaDatasets}
+import org.dbpedia.extraction.wikiparser.{JsonNode, PageNode}
+import collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
 
 /**
@@ -36,7 +35,7 @@ class WikidataNameSpaceSameAsExtractor(
 
     val objectUri = subjectUri.replace("wikidata.dbpedia.org/resource","wikidata.org/entity")
 
-    quads += new Quad(context.language, DBpediaDatasets.WikidataNameSpaceSameAs , subjectUri, sameAsProperty , objectUri, page.wikiPage.sourceUri,null, page.line)
+    quads += new Quad(context.language, DBpediaDatasets.WikidataNameSpaceSameAs , subjectUri, sameAsProperty , objectUri, page.wikiPage.sourceUri,null)
 
     quads
   }

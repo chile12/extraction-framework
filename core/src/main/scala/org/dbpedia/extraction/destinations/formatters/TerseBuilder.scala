@@ -1,7 +1,10 @@
 package org.dbpedia.extraction.destinations.formatters
 
-import org.dbpedia.extraction.destinations.formatters.UriPolicy._
+import org.dbpedia.extraction.ontology.datatypes.Datatype
+import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.util.TurtleUtils.escapeTurtle
+import java.net.URI
+import UriPolicy._
 
 /**
  * Helps to build one triple/quad line in Turtle/Turtle-Quads/N-Triples/N-Quads format.
@@ -54,7 +57,7 @@ extends UriTripleBuilder(policies) {
     // http://www.w3.org/TR/rdf-testcases/#eoln and http://www.w3.org/TR/turtle/#term-turtle2-WS
     // and it's probably better to be consistent instead of using the EOL of the platform
     // where the file was generated. These files are moved around a lot anyway.
-    this add "."
+    this add ".\n"
   }
   
   override def result = sb.toString
@@ -76,11 +79,5 @@ extends UriTripleBuilder(policies) {
     escapeTurtle(sb, input, turtle)
     this
   }
-
-  override def lineNo(line: Int): Unit =
-  {
-    sb append " #" + line
-  }
-
-  override def newLine(): Unit = sb append "\n"
+  
 }

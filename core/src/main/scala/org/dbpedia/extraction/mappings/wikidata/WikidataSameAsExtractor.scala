@@ -41,7 +41,7 @@ class WikidataSameAsExtractor(
       Language.get(l) match{
         case Some(dbpedia_lang) => {
           val sitelink = WikiTitle.parse(siteLink.getPageTitle().toString(),dbpedia_lang)
-          quads += new Quad(context.language, DBpediaDatasets.WikidataSameAs, subjectUri, sameAsProperty, sitelink.resourceIri, page.wikiPage.sourceUri,null, page.line)
+          quads += new Quad(context.language, DBpediaDatasets.WikidataSameAs, subjectUri, sameAsProperty, sitelink.resourceIri, page.wikiPage.sourceUri,null)
         }
         case _=>
       }

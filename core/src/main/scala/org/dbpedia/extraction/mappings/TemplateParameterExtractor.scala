@@ -29,29 +29,29 @@ extends PageNodeExtractor
     if (page.title.namespace != Namespace.Template || page.isRedirect) return Seq.empty
 
     val quads = new ArrayBuffer[Quad]()
-    val parameters = new ArrayBuffer[(String, Int)]()
-    val linkParameters = new ArrayBuffer[(String, Int)]()
+    val parameters = new ArrayBuffer[String]()
+    val linkParameters = new ArrayBuffer[String]()
 
     //try to get parameters inside internal links
     for (linkTemplatePar <- collectInternalLinks(page) )  {
-      linkParameters += ((linkTemplatePar.toWikiText, linkTemplatePar.line))
+      linkParameters += linkTemplatePar.toWikiText
     }
 
     linkParameters.distinct.foreach( link => {
-      parameterRegex findAllIn link._1 foreach (_ match {
-          case parameterRegex (param) => parameters += ((param, link._2))
+      parameterRegex findAllIn link foreach (_ match {
+          case parameterRegex (param) => parameters += param
           case _ => // ignore
       })
     })
 
     for (templatePar <- collectTemplateParameters(page) )  {
-      parameters += ((templatePar.parameter, templatePar.line))
+      parameters += templatePar.parameter
     }
 
-    for (parameter <- parameters.distinct if parameter._1.nonEmpty) {
+    for (parameter <- parameters.distinct if parameter.nonEmpty) {
       // TODO: page.sourceUri does not include the line number
       quads += new Quad(context.language, DBpediaDatasets.TemplateParameters, subjectUri, templateParameterProperty, 
-          parameter._1, page.sourceUri, context.ontology.datatypes("xsd:string"), parameter._2)
+          parameter, page.sourceUri, context.ontology.datatypes("xsd:string"))
     }
     
     quads

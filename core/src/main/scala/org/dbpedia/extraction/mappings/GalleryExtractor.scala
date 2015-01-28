@@ -97,8 +97,7 @@ extends WikiPageExtractor
                                 hasGalleryItemProperty,
                                 fileWikiTitle.pageIri,
                                 sourceWithLineNumber, 
-                                null,
-                                lineNumber
+                                null
                             ))
                         } catch {
                             case e:WikiParserException => {

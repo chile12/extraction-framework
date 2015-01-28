@@ -37,6 +37,6 @@ extends PageNodeExtractor
     if (page.title.namespace != Namespace.Main || page.isRedirect || page.isDisambiguation) return Seq.empty
     
     // Note: subjectUri is probably identical to the URI we use here, but we want to be sure. 
-    Seq(quad(language.resourceUri.append(page.title.decodedWithNamespace), flickrWrapprUrlPrefix+page.title.encoded, page.sourceUri, page.line))
+    Seq(quad(language.resourceUri.append(page.title.decodedWithNamespace), flickrWrapprUrlPrefix+page.title.encoded, page.sourceUri))
   }
 }

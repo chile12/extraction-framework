@@ -30,7 +30,7 @@ extends PageNodeExtractor
     
     val list = PageLinksExtractor.collectInternalLinks(node)
     
-    list.map(link => new Quad(context.language, DBpediaDatasets.PageLinks, subjectUri, wikiPageWikiLinkProperty, getUri(link.destination), link.sourceUri, null, link.line))
+    list.map(link => new Quad(context.language, DBpediaDatasets.PageLinks, subjectUri, wikiPageWikiLinkProperty, getUri(link.destination), link.sourceUri, null))
   }
 
   private def getUri(destination : WikiTitle) : String =

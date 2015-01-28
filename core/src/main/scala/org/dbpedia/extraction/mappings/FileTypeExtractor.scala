@@ -57,7 +57,7 @@ class FileTypeExtractor(context: {
             return Seq.empty
 
         // Generate the fileURL.
-        val fileURL = ExtractorUtils.getFileURL(page.title.encoded.toString(), commonsLang)
+        val fileURL = ExtractorUtils.getFileURL(page.title.encoded, commonsLang)
         val file_url_quads = Seq(
             // <resource> dbo:fileURL <url>
             new Quad(Language.English,
@@ -66,8 +66,7 @@ class FileTypeExtractor(context: {
                 dboFileURLProperty,
                 fileURL,
                 page.sourceUri,
-                null,
-                -1
+                null
             )
         )
 
@@ -90,8 +89,8 @@ class FileTypeExtractor(context: {
     def generateImageURLQuads(page: WikiPage, subjectUri: String): Seq[Quad] =
     {
         // Get the file and thumbnail URLs.
-        val fileURL = ExtractorUtils.getFileURL(page.title.encoded.toString(), commonsLang)
-        val thumbnailURL = ExtractorUtils.getThumbnailURL(page.title.encoded.toString(), commonsLang)
+        val fileURL = ExtractorUtils.getFileURL(page.title.encoded, commonsLang)
+        val thumbnailURL = ExtractorUtils.getThumbnailURL(page.title.encoded, commonsLang)
 
         Seq(
             // 1. <resource> foaf:depiction <image>
@@ -101,7 +100,7 @@ class FileTypeExtractor(context: {
                 foafDepictionProperty,
                 fileURL,
                 page.sourceUri,
-                null, -1
+                null
             ), 
             // 2. <resource> thumbnail <image>
             new Quad(Language.English,
@@ -110,7 +109,7 @@ class FileTypeExtractor(context: {
                 dboThumbnailProperty,
                 thumbnailURL,
                 page.sourceUri,
-                null, -1
+                null
             ),
             // 3. <image> foaf:thumbnail <image>
             new Quad(Language.English,
@@ -119,7 +118,7 @@ class FileTypeExtractor(context: {
                 foafThumbnailProperty,
                 thumbnailURL,
                 page.sourceUri,
-                null, -1
+                null
             )
         )
     }
@@ -164,8 +163,7 @@ class FileTypeExtractor(context: {
             fileExtensionProperty,
             extension,
             page.sourceUri,
-            xsdString,
-            -1
+            xsdString
         )
 
         // 2. Figure out the file type and MIME type.
@@ -182,8 +180,7 @@ class FileTypeExtractor(context: {
             dcTypeProperty,
             fileTypeClass.uri,
             page.sourceUri,
-            null,
-            -1
+            null
         )
             
         // 5. <resource> dc:format "mimeType"^^xsd:string
@@ -193,8 +190,7 @@ class FileTypeExtractor(context: {
             dcFormatProperty,
             mimeType,
             page.sourceUri,
-            xsdString,
-            -1
+            xsdString
         )
 
         // 6. For fileTypeClass and dbo:File, add all related classes.
@@ -206,8 +202,7 @@ class FileTypeExtractor(context: {
                 rdfTypeProperty,
                 rdfClass.uri,
                 page.sourceUri,
-                null,
-                -1
+                null
             )
         )
 

@@ -32,8 +32,8 @@ extends PageNodeExtractor
   {
     if (page.isRedirect && namespaces.contains(page.title.namespace)) {
       // TODO: copy redirect target from WikiPage to PageNode and use it here?
-      for (InternalLinkNode(destination, _, line, _) <- page.children) {
-        return Seq(quad(subjectUri, language.resourceUri.append(destination.decodedWithNamespace), page.sourceUri, line))
+      for (InternalLinkNode(destination, _, _, _) <- page.children) {
+        return Seq(quad(subjectUri, language.resourceUri.append(destination.decodedWithNamespace), page.sourceUri))
       }
     }
 

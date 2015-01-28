@@ -1,6 +1,7 @@
 package org.dbpedia.extraction.destinations.formatters
 
-import org.dbpedia.extraction.destinations.formatters.UriPolicy._
+import java.lang.StringBuilder
+import UriPolicy._
 
 /**
  * Builds a triple for SPARUL (
@@ -107,8 +108,4 @@ class SPARULBuilder (policies: Array[Policy] = null)
     }
     this
   }
-
-  override def lineNo(line: Int): Unit = sb append " #" + line
-
-  override def newLine(): Unit = sb append "\n"
 }

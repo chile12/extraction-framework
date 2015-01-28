@@ -1,18 +1,20 @@
 package org.dbpedia.extraction.scripts
 
 import java.io.File
+import java.util.Arrays._
 import java.util.regex.Matcher
 
 import org.dbpedia.extraction.destinations.formatters.Formatter
+import org.dbpedia.extraction.destinations.{Quad, CompositeDestination, WriterDestination, Destination}
 import org.dbpedia.extraction.destinations.formatters.UriPolicy._
-import org.dbpedia.extraction.destinations.{CompositeDestination, Destination, Quad, WriterDestination}
 import org.dbpedia.extraction.ontology.RdfNamespace
-import org.dbpedia.extraction.scripts.WikidataSameAsToLanguageLinks.{DBPEDIA_URI_PATTERN, error, sameAs}
 import org.dbpedia.extraction.util.ConfigUtils._
 import org.dbpedia.extraction.util.IOUtils._
-import org.dbpedia.extraction.util.RichFile.wrapFile
 import org.dbpedia.extraction.util._
+import org.dbpedia.extraction.util.RichFile.wrapFile
+import WikidataSameAsToLanguageLinks.{sameAs, DBPEDIA_URI_PATTERN, error}
 
+import scala.collection
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -211,12 +213,12 @@ class WikidataSameAsToLanguageLinks(val baseDir: File, val wikiDataFile: FileLik
           // wikidata entity
           var quads = List[Quad]()
           quads :::= sameEntities.filterKeys(_ != language).toList.sortBy(_._1).map { case (language, context) =>
-            new Quad(language, null, currentEntity.entityUri, sameAs, context.entityUri, context.context, null: String, -1)
+            new Quad(language, null, currentEntity.entityUri, sameAs, context.entityUri, context.context, null: String)
           }
           quads ::= new Quad(language, null, currentEntity.entityUri, sameAs, wikiDataEntity, currentEntity.context,
-            null: String, -1)
+            null: String)
           quads ::= new Quad(language, null, currentEntity.entityUri, sameAs, getWikidataUri(wikiDataEntity),
-            currentEntity.context, null: String, -1)
+            currentEntity.context, null: String)
           destinations(language).write(quads)
         case _ => // do not write anything when there is no entity in the current language
       }
