@@ -1,13 +1,14 @@
 package org.dbpedia.extraction.mappings
 
+import org.dbpedia.extraction.dataparser._
+import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad, QuadBuilder}
+import org.dbpedia.extraction.ontology.datatypes._
+import org.dbpedia.extraction.ontology.{DBpediaNamespace, Ontology, OntologyProperty}
+import org.dbpedia.extraction.util.Language
+import org.dbpedia.extraction.wikiparser.TemplateNode
+
 import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
-import org.dbpedia.extraction.ontology.datatypes._
-import org.dbpedia.extraction.dataparser._
-import org.dbpedia.extraction.wikiparser.TemplateNode
-import org.dbpedia.extraction.destinations.{DBpediaDatasets,Quad,QuadBuilder}
-import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.ontology.{OntologyClass, Ontology, DBpediaNamespace, OntologyProperty}
 
 class CalculateMapping (
   val templateProperty1 : String,
@@ -70,7 +71,7 @@ extends PropertyMapping
                   {
                       case "add" => unit1.toStandardUnit(value1) + unit2.toStandardUnit(value2)
                   }
-                  return writeUnitValue(value, unit1, subjectUri, node.sourceUri)
+                  return writeUnitValue(value, unit1, subjectUri, node.sourceUri, node.line)
               }
               //DoubleParser
               case (value1 : Double, value2 : Double) =>
@@ -79,7 +80,7 @@ extends PropertyMapping
                   {
                       case "add" => (value1 + value2).toString
                   }
-                  staticType(subjectUri, value, node.sourceUri)
+                  staticType(subjectUri, value, node.sourceUri, node.line)
               }
               //IntegerParser
               case (value1 : Int, value2 : Int) =>
@@ -88,7 +89,7 @@ extends PropertyMapping
                   {
                       case "add" => (value1 + value2).toString
                   }
-                  staticType(subjectUri, value, node.sourceUri)
+                  staticType(subjectUri, value, node.sourceUri, node.line)
               }
           }
 
@@ -99,18 +100,18 @@ extends PropertyMapping
   }
 
   //TODO duplicated from SimplePropertyMapping
-  private def writeUnitValue(value : Double, unit : UnitDatatype, subjectUri : String, sourceUri : String) : Seq[Quad] =
+  private def writeUnitValue(value : Double, unit : UnitDatatype, subjectUri : String, sourceUri : String, line: Int) : Seq[Quad] =
   {
     //TODO better handling of inconvertible units
     if(unit.isInstanceOf[InconvertibleUnitDatatype])
     {
-        return Seq(dynamicType(subjectUri, value.toString, sourceUri, unit))
+        return Seq(dynamicType(subjectUri, value.toString, sourceUri, unit, line))
     }
 
     var graph = new ArrayBuffer[Quad]
     
     //Write generic property
-    graph += genericType(subjectUri, value.toString, sourceUri)
+    graph += genericType(subjectUri, value.toString, sourceUri, line)
 
     // Write specific properties
     // FIXME: copy-and-paste in SimplePropertyMapping
@@ -120,7 +121,7 @@ extends PropertyMapping
       {
          val outputValue = specificPropertyUnit.fromStandardUnit(value)
          val propertyUri = DBpediaNamespace.ONTOLOGY.append(cls.name+'/'+ontologyProperty.name)
-         graph += specificType(subjectUri, propertyUri, outputValue.toString, sourceUri, specificPropertyUnit)
+         graph += specificType(subjectUri, propertyUri, outputValue.toString, sourceUri, specificPropertyUnit, line)
       }
     }
 

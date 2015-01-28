@@ -1,12 +1,11 @@
 package org.dbpedia.extraction.mappings.fr
 
-import java.net.{URI,URISyntaxException}
-import org.dbpedia.extraction.wikiparser._
 import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
-import org.dbpedia.extraction.config.mappings.HomepageExtractorConfig
-import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.{Language, UriUtils}
 import org.dbpedia.extraction.mappings._
+import org.dbpedia.extraction.ontology.Ontology
+import org.dbpedia.extraction.util.Language
+import org.dbpedia.extraction.wikiparser._
+
 import scala.language.reflectiveCalls
 
 /**
@@ -37,7 +36,7 @@ extends PageNodeExtractor {
 			    if (!isAllDigits(city)) {
 		    	        val newUri = context.language.resourceUri.append(city)
 			    
-			        return Seq (new Quad(context.language, DBpediaDatasets.FrenchPopulation, newUri, populationProperty, m.group(1), node.sourceUri))
+			        return Seq (new Quad(context.language, DBpediaDatasets.FrenchPopulation, newUri, populationProperty, m.group(1), node.sourceUri, null, node.line))
 			    }
 		        }
 	            }

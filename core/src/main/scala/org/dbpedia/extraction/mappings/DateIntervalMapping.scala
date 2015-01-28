@@ -1,14 +1,15 @@
 package org.dbpedia.extraction.mappings
 
 import java.util.logging.Logger
+
+import org.dbpedia.extraction.config.mappings.DateIntervalMappingConfig._
 import org.dbpedia.extraction.dataparser.DateTimeParser
-import org.dbpedia.extraction.ontology.datatypes.Datatype
 import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
 import org.dbpedia.extraction.ontology.OntologyProperty
+import org.dbpedia.extraction.ontology.datatypes.Datatype
 import org.dbpedia.extraction.util.Language
-import org.dbpedia.extraction.config.mappings.DateIntervalMappingConfig._
-import org.dbpedia.extraction.wikiparser.{PropertyNode, NodeUtil, TemplateNode}
-import java.lang.IllegalStateException
+import org.dbpedia.extraction.wikiparser.{NodeUtil, PropertyNode, TemplateNode}
+
 import scala.language.reflectiveCalls
 
 class DateIntervalMapping ( 
@@ -70,7 +71,7 @@ extends PropertyMapping
       }
 
       //Write start date quad
-      val quad1 = new Quad(context.language, DBpediaDatasets.OntologyProperties, subjectUri, startDateOntologyProperty, startDate.toString, propertyNode.sourceUri)
+      val quad1 = new Quad(context.language, DBpediaDatasets.OntologyProperties, subjectUri, startDateOntologyProperty, startDate.toString, propertyNode.sourceUri, null, propertyNode.line)
 
       //Writing the end date is optional if "until present" is specified
       for(endDate <- endDateOpt)
@@ -83,7 +84,7 @@ extends PropertyMapping
         }
 
         //Write end year quad
-        val quad2 = new Quad(context.language, DBpediaDatasets.OntologyProperties, subjectUri, endDateOntologyProperty, endDate.toString, propertyNode.sourceUri)
+        val quad2 = new Quad(context.language, DBpediaDatasets.OntologyProperties, subjectUri, endDateOntologyProperty, endDate.toString, propertyNode.sourceUri, null, propertyNode.line)
 
         return Seq(quad1, quad2)
       }

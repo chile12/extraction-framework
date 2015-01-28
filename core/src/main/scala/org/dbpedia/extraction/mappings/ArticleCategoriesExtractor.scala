@@ -1,10 +1,10 @@
 package org.dbpedia.extraction.mappings
 
 import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
-import org.dbpedia.extraction.wikiparser.impl.wikipedia.Namespaces
 import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.{Language, ExtractorUtils}
+import org.dbpedia.extraction.util.{ExtractorUtils, Language}
 import org.dbpedia.extraction.wikiparser._
+
 import scala.language.reflectiveCalls
 
 /**
@@ -25,7 +25,7 @@ class ArticleCategoriesExtractor( context : {
         
         val links = collectCategoryLinks(node).filter(isCategoryForArticle(_))
 
-        links.map(link => new Quad(context.language, DBpediaDatasets.ArticleCategories, subjectUri, dctermsSubjectProperty, getUri(link.destination), link.sourceUri))
+        links.map(link => new Quad(context.language, DBpediaDatasets.ArticleCategories, subjectUri, dctermsSubjectProperty, getUri(link.destination), link.sourceUri, null, link.line))
     }
 
     private def isCategoryForArticle(linkNode : InternalLinkNode) = linkNode.destinationNodes match

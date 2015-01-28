@@ -50,7 +50,8 @@ extends PageNodeExtractor
           wikiPageDisambiguatesProperty,
           language.resourceUri.append(link.destination.decodedWithNamespace),
           link.sourceUri,
-          null
+          null,
+          link.line
         )
       }
     }

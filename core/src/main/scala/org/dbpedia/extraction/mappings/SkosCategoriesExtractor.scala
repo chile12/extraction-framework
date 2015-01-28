@@ -1,11 +1,11 @@
 package org.dbpedia.extraction.mappings
 
-import org.dbpedia.extraction.destinations.{DBpediaDatasets,Quad,QuadBuilder}
-import org.dbpedia.extraction.ontology.datatypes.Datatype
-import org.dbpedia.extraction.wikiparser.impl.wikipedia.Namespaces
+import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad, QuadBuilder}
 import org.dbpedia.extraction.ontology.Ontology
+import org.dbpedia.extraction.ontology.datatypes.Datatype
 import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.wikiparser._
+
 import scala.collection.mutable.ArrayBuffer
 import scala.language.reflectiveCalls
 
@@ -36,8 +36,8 @@ extends PageNodeExtractor
 
     var quads = new ArrayBuffer[Quad]()
 
-    quads += new Quad(language, DBpediaDatasets.SkosCategories, subjectUri, rdfTypeProperty, skosConceptClass.uri, node.sourceUri)
-    quads += new Quad(language, DBpediaDatasets.SkosCategories, subjectUri, skosPrefLabelProperty, node.title.decoded, node.sourceUri, new Datatype("rdf:langString"))
+    quads += new Quad(language, DBpediaDatasets.SkosCategories, subjectUri, rdfTypeProperty, skosConceptClass.uri, node.sourceUri, null, node.line)
+    quads += new Quad(language, DBpediaDatasets.SkosCategories, subjectUri, skosPrefLabelProperty, node.title.decoded, node.sourceUri, new Datatype("rdf:langString"), node.line)
 
     for(link <- collectCategoryLinks(node))
     {
@@ -50,7 +50,7 @@ extends PageNodeExtractor
       
       val objectUri = language.resourceUri.append(link.destination.decodedWithNamespace)
 
-      quads += quad(subjectUri, property, objectUri, link.sourceUri)
+      quads += quad(subjectUri, property, objectUri, link.sourceUri, link.line)
     }
 
     quads

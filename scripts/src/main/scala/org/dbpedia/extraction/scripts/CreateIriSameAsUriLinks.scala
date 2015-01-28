@@ -52,7 +52,7 @@ object CreateIriSameAsUriLinks {
         val iri = quad.subject
         val uri = new URI(iri).toASCIIString
         if (uri == iri) List.empty
-        else List(new Quad(null, null, iri, sameAs, uri, null, null: String))
+        else List(new Quad(null, null, iri, sameAs, uri, null, null: String, -1))
       }
     }
     

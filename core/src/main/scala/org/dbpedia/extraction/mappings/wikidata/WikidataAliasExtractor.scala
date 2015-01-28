@@ -42,7 +42,7 @@ class WikidataAliasExtractor (
       val alias = value.toString().replace("(" + lang + ")", "").replace("[","").replace("]","").trim()
       Language.get(lang) match
       {
-        case Some(dbpedia_lang) => quads += new Quad(dbpedia_lang, DBpediaDatasets.WikidataAlias, subjectUri, aliasProperty,alias, page.wikiPage.sourceUri, context.ontology.datatypes("rdf:langString"))
+        case Some(dbpedia_lang) => quads += new Quad(dbpedia_lang, DBpediaDatasets.WikidataAlias, subjectUri, aliasProperty,alias, page.wikiPage.sourceUri, context.ontology.datatypes("rdf:langString"), page.line)
         case _=>
       }
     }

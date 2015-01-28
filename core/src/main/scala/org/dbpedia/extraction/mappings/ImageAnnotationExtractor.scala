@@ -1,12 +1,13 @@
 package org.dbpedia.extraction.mappings
 
 import java.util.logging.Logger
+
 import org.dbpedia.extraction.destinations.{DBpediaDatasets, Quad}
-import org.dbpedia.extraction.wikiparser._
 import org.dbpedia.extraction.ontology.Ontology
-import org.dbpedia.extraction.util.{Language, ExtractorUtils}
+import org.dbpedia.extraction.util.{ExtractorUtils, Language}
+import org.dbpedia.extraction.wikiparser._
+
 import scala.language.reflectiveCalls
-import org.dbpedia.extraction.util.StringUtils._
 
 /**
  * Extracts image annotations created using the Image Annotator gadget
@@ -99,10 +100,10 @@ extends PageNodeExtractor
                     val annotation_dimx = getImageNodePropertyIntValue("dimx")
                     val annotation_dimy = getImageNodePropertyIntValue("dimy")
                     
-                    ExtractorUtils.getFileURL(pageNode.title.encoded, context.language) +
+                    ExtractorUtils.getFileURL(pageNode.title.encoded.toString(), context.language) +
                         s"?width=$annotation_dimx&height=$annotation_dimy#xywh=pixel:$annotation_x,$annotation_y,$annotation_w,$annotation_h"
                 } catch {
-                    case e: RuntimeException => ExtractorUtils.getFileURL(pageNode.title.encoded, context.language) +
+                    case e: RuntimeException => ExtractorUtils.getFileURL(pageNode.title.encoded.toString(), context.language) +
                         s"#xywh=pixel:$annotation_x,$annotation_y,$annotation_w,$annotation_h"
                 }
 
@@ -124,7 +125,9 @@ extends PageNodeExtractor
                     subjectUri,
                     hasAnnotationProperty,
                     annotation_url,
-                    pageNode.sourceUri
+                    pageNode.sourceUri,
+                    null,
+                    pageNode.line
                 ))
 
                 // Generate one quad each for plaintext and WikiText content.
@@ -135,7 +138,9 @@ extends PageNodeExtractor
                         annotation_url, 
                         descriptionProperty, 
                         contents_plaintext, 
-                        pageNode.sourceUri
+                        pageNode.sourceUri,
+                        null,
+                        pageNode.line
                     )
                 )
 
@@ -146,7 +151,9 @@ extends PageNodeExtractor
                         annotation_url, 
                         asWikiTextProperty, 
                         contents_wikitext, 
-                        pageNode.sourceUri
+                        pageNode.sourceUri,
+                        null,
+                        pageNode.line
                     )
                 )
 

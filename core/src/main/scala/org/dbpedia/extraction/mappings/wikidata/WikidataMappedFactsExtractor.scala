@@ -47,7 +47,7 @@ class WikidataMappedFactsExtractor(
             case value: ItemIdValue => {
               getDBpediaSameasProperties(property).foreach{ dbProp =>
                 val fact = value.toString().replace("(ItemId)", "")
-                quads += new Quad(context.language, DBpediaDatasets.WikidataMappedFacts, subjectUri, dbProp, fact, page.wikiPage.sourceUri, null)
+                quads += new Quad(context.language, DBpediaDatasets.WikidataMappedFacts, subjectUri, dbProp, fact, page.wikiPage.sourceUri, null, page.line)
               }
             }
             case value:StringValue => {
@@ -56,22 +56,22 @@ class WikidataMappedFactsExtractor(
               getDBpediaSameasProperties(property).foreach{ dbProp =>
                 if (commonMediaFilesProperties.contains(propID)){
                   val fileURI = "http://commons.wikimedia.org/wiki/File:" + fact.toString.replace(" ","_")
-                  quads += new Quad(null, DBpediaDatasets.WikidataMappedFacts, subjectUri,dbProp.uri,fileURI, page.wikiPage.sourceUri, null)
+                  quads += new Quad(null, DBpediaDatasets.WikidataMappedFacts, subjectUri,dbProp.uri,fileURI, page.wikiPage.sourceUri, null, page.line)
                 } else {
-                  quads += new Quad(null, DBpediaDatasets.WikidataMappedFacts, subjectUri,dbProp, fact, page.wikiPage.sourceUri)
+                  quads += new Quad(null, DBpediaDatasets.WikidataMappedFacts, subjectUri,dbProp, fact, page.wikiPage.sourceUri, null, page.line)
                 }
               }
             }
             case value:TimeValue => {
               val fact = value.getYear+"-"+value.getMonth+"-"+value.getDay
               getDBpediaSameasProperties(property).foreach { dbProp =>
-                quads += new Quad(context.language, DBpediaDatasets.WikidataMappedFacts, subjectUri, dbProp,fact, page.wikiPage.sourceUri)
+                quads += new Quad(context.language, DBpediaDatasets.WikidataMappedFacts, subjectUri, dbProp,fact, page.wikiPage.sourceUri, null, page.line)
               }
             }
             case value: QuantityValue => {
               val fact = value.getNumericValue.toString
               getDBpediaSameasProperties(property).foreach { dbProp =>
-                quads += new Quad(context.language, DBpediaDatasets.WikidataMappedFacts, subjectUri, dbProp,fact, page.wikiPage.sourceUri, context.ontology.datatypes("xsd:float"))
+                quads += new Quad(context.language, DBpediaDatasets.WikidataMappedFacts, subjectUri, dbProp,fact, page.wikiPage.sourceUri, context.ontology.datatypes("xsd:float"), page.line)
               }
             }
             case _ =>
