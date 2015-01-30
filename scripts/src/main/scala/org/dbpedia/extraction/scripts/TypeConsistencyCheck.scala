@@ -1,20 +1,20 @@
 package org.dbpedia.extraction.scripts
 
-import java.io.{Writer, File}
+import java.io.{File, Writer}
 import java.net.URL
 
-import org.dbpedia.extraction.destinations.formatters.{Formatter, UriPolicy}
-import org.dbpedia.extraction.destinations.formatters.UriPolicy._
 import org.dbpedia.extraction.destinations._
-import org.dbpedia.extraction.ontology.{Ontology, OntologyClass, OntologyProperty}
+import org.dbpedia.extraction.destinations.formatters.Formatter
+import org.dbpedia.extraction.destinations.formatters.UriPolicy._
 import org.dbpedia.extraction.ontology.io.OntologyReader
+import org.dbpedia.extraction.ontology.{Ontology, OntologyClass, OntologyProperty}
 import org.dbpedia.extraction.sources.{WikiSource, XMLSource}
 import org.dbpedia.extraction.util.RichFile.wrapFile
-import org.dbpedia.extraction.util.{Finder, ConfigUtils, IOUtils, Language}
+import org.dbpedia.extraction.util.{ConfigUtils, Finder, IOUtils, Language}
 import org.dbpedia.extraction.wikiparser.Namespace
 
 import scala.collection.mutable
-import scala.collection.mutable.{HashMap, ArrayBuffer}
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.util.control.Breaks._
 
 /**
@@ -45,7 +45,8 @@ object TypeConsistencyCheck {
     val config = ConfigUtils.loadConfig(args(0), "UTF-8")
 
     val baseDir = ConfigUtils.getValue(config, "base-dir", true)(new File(_))
-    if (!baseDir.exists) throw new IllegalArgumentException("dir " + baseDir + " does not exist")
+    if (!baseDir.exists)
+      throw new IllegalArgumentException("dir " + baseDir + " does not exist")
     val langConfString = ConfigUtils.getString(config, "languages", false)
     val languages = ConfigUtils.parseLanguages(baseDir, Seq(langConfString))
 
@@ -69,12 +70,10 @@ object TypeConsistencyCheck {
     val typesDataset = "instance-types." + suffix
     val mappedTripleDataset = "mappingbased-properties." + suffix
 
-    var mapp: scala.collection.mutable.Map[String, OntologyClass] = null
+    val mapp: scala.collection.mutable.Map[String, OntologyClass] = new scala.collection.mutable.HashMap[String, OntologyClass]()
 
     val relatedClasses = new mutable.HashSet[(OntologyClass, OntologyClass)]
-    val disjoinedClasses = new mutable.HashSet[(OntologyClass, OntologyClass)]
-
-    mapp = new scala.collection.mutable.HashMap[String, OntologyClass]()
+    val disjoinedClasses = new mutable.HashMap[(OntologyClass, OntologyClass), Boolean]
 
     for (lang <- languages) {
 
@@ -112,8 +111,6 @@ object TypeConsistencyCheck {
           break
       }
     }
-
-
 
     def mapProperties(quad: Quad): Unit =
     {
@@ -161,7 +158,8 @@ object TypeConsistencyCheck {
         return untypedDataset
       }
       else if (predicate == null) {
-        //weired stuff
+        //TODO not encountered yet -> delete?
+        return null
       }
 
       if (obj.relatedClasses.contains(predicate.range))
@@ -175,22 +173,25 @@ object TypeConsistencyCheck {
 
     }
 
+    /**
+     * checks if two classes ar disjoint by testing any base-classes recursively for disjointnes
+     * @param objClass      the type of an object
+     * @param rangeClass    the range of the pertaining property
+     * @param clear         new disjoint tests have to clear the relatedClasses cache, keeps already tested combinations of this cycle
+     * @return
+     */
     def isDisjoined(objClass : OntologyClass, rangeClass : OntologyClass, clear: Boolean = true) : Boolean = {
 
       if (clear)
         relatedClasses.clear()
 
-      if(disjoinedClasses.contains((objClass, rangeClass)))
+      if(disjoinedClasses((objClass, rangeClass)))
         return true
 
-      if(objClass.disjointWithClasses.contains(rangeClass)) {
-        disjoinedClasses.add(objClass, rangeClass)
-        disjoinedClasses.add(rangeClass, objClass)
-        return true
-      }
-      if(rangeClass.disjointWithClasses.contains(objClass)) {
-        disjoinedClasses.add(objClass, rangeClass)
-        disjoinedClasses.add(rangeClass, objClass)
+      if(objClass.disjointWithClasses.contains(rangeClass)
+        || rangeClass.disjointWithClasses.contains(objClass)) {
+        disjoinedClasses.put((objClass, rangeClass), true)
+        disjoinedClasses.put((rangeClass, objClass), true)
         return true
       }
       relatedClasses.add(objClass, rangeClass)
@@ -207,7 +208,7 @@ object TypeConsistencyCheck {
           }
         }
       }
-      return false
+      false
     }
   }
 
