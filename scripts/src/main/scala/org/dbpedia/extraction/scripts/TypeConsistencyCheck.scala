@@ -33,6 +33,7 @@ object TypeConsistencyCheck {
   val datasets = Seq(correctDataset, disjointDataset, untypedDataset, nonDisjointDataset)
 
   val propertyMap = new scala.collection.mutable.HashMap[String, OntologyProperty]
+  val disjoinedClassesMap = new mutable.HashMap[(OntologyClass, OntologyClass), Boolean]
 
   def main(args: Array[String]) {
 
@@ -70,10 +71,8 @@ object TypeConsistencyCheck {
     val typesDataset = "instance-types." + suffix
     val mappedTripleDataset = "mappingbased-properties." + suffix
 
-    val mapp: scala.collection.mutable.Map[String, OntologyClass] = new scala.collection.mutable.HashMap[String, OntologyClass]()
-
     val relatedClasses = new mutable.HashSet[(OntologyClass, OntologyClass)]
-    val disjoinedClasses = new mutable.HashMap[(OntologyClass, OntologyClass), Boolean]
+    
 
     for (lang <- languages) {
 
@@ -82,10 +81,13 @@ object TypeConsistencyCheck {
       val date = finder.dates().last
       val destination = createDestination(finder, date, formats)
 
+      val resourceTypes = new scala.collection.mutable.HashMap[String, OntologyClass]()
+
+
       try {
         QuadReader.readQuads(lang.wikiCode+": Reading types from "+typesDataset, finder.file(date, typesDataset)) { quad =>
           val q = quad.copy(language = lang.wikiCode) //set the language of the Quad
-          mapProperties(quad)
+          computeType(quad, resourceTypes, ontology)
         }
       }
       catch {
@@ -99,7 +101,7 @@ object TypeConsistencyCheck {
         destination.open()
         QuadReader.readQuads(lang.wikiCode+": Reading types from " + mappedTripleDataset, finder.file(date, mappedTripleDataset)) { quad =>
 
-          val correctDataset = checkQuad(quad)
+          val correctDataset = checkQuad(quad, resourceTypes, ontology)
           val q = quad.copy(language = lang.wikiCode, dataset = correctDataset.name) //set the language of the Quad
           destination.write(Seq(q))
         }
@@ -112,30 +114,13 @@ object TypeConsistencyCheck {
       }
     }
 
-    def mapProperties(quad: Quad): Unit =
-    {
-      breakable {
-        val classOption = ontology.classes.find(x => x._2.uri == quad.value)
-        var ontoClass: OntologyClass = null
-        if (classOption != null && classOption != None)
-          ontoClass = classOption.get._2
-        else
-          break
-        if (!mapp.contains(quad.subject)) //not! {
-          mapp(quad.subject) = ontoClass
-        else {
-          if (ontoClass.relatedClasses.contains(mapp(quad.subject)))
-            mapp(quad.subject) = ontoClass
-        }
-      }
-    }
 
     /**
      * Chacks a Quad and returns the new dataset where it should be written depending on the state
      * @param quad
      * @return
      */
-    def checkQuad(quad: Quad): Dataset =
+    def checkQuad(quad: Quad, resourceTypes: scala.collection.mutable.Map[String, OntologyClass], ontology: Ontology): Dataset =
     {
       if (quad.datatype != null) {
         return correctDataset
@@ -143,7 +128,7 @@ object TypeConsistencyCheck {
 
       //object is uri
       val obj = try {
-        mapp(quad.value)
+        resourceTypes(quad.value)
       } catch {
         case _: Throwable => return untypedDataset
       }
@@ -185,13 +170,13 @@ object TypeConsistencyCheck {
       if (clear)
         relatedClasses.clear()
 
-      if(disjoinedClasses((objClass, rangeClass)))
+      if(disjoinedClassesMap((objClass, rangeClass)))
         return true
 
       if(objClass.disjointWithClasses.contains(rangeClass)
         || rangeClass.disjointWithClasses.contains(objClass)) {
-        disjoinedClasses.put((objClass, rangeClass), true)
-        disjoinedClasses.put((rangeClass, objClass), true)
+        disjoinedClassesMap.put((objClass, rangeClass), true)
+        disjoinedClassesMap.put((rangeClass, objClass), true)
         return true
       }
       relatedClasses.add(objClass, rangeClass)
@@ -209,6 +194,24 @@ object TypeConsistencyCheck {
         }
       }
       false
+    }
+  }
+
+  private def computeType(quad: Quad, resourceTypes: scala.collection.mutable.Map[String, OntologyClass], ontology: Ontology): Unit =
+  {
+    breakable {
+      val classOption = ontology.classes.find(x => x._2.uri == quad.value)
+      var ontoClass: OntologyClass = null
+      if (classOption != null && classOption != None)
+        ontoClass = classOption.get._2
+      else
+        break
+      if (!resourceTypes.contains(quad.subject)) //not! {
+        resourceTypes(quad.subject) = ontoClass
+      else {
+        if (ontoClass.relatedClasses.contains(resourceTypes(quad.subject)))
+          resourceTypes(quad.subject) = ontoClass
+      }
     }
   }
 
