@@ -4,10 +4,9 @@ import java.io._
 import java.util.logging.{Level, Logger}
 
 import org.dbpedia.extraction.sources.{Source, WikiPage}
-import org.dbpedia.extraction.util.{UriUtils, Language}
+import org.dbpedia.extraction.util.{Language, UriUtils}
 import org.dbpedia.extraction.wikiparser._
 import org.dbpedia.extraction.wikiparser.impl.wikipedia.Redirect
-import org.dbpedia.util.text.uri.UriDecoder
 
 import scala.collection.mutable
 import scala.collection.mutable.{HashMap, HashSet}
@@ -60,15 +59,10 @@ class Redirects(private val map : Map[String, String])
         return resolveUri
 
       val titleName = UriUtils.encode(resolveUri).getPath()
-      val title = titleName.substring(titleName.lastIndexOf("/")+1)
+      val title = titleName.substring(titleName.lastIndexOf("/")+1).replace('_', ' ')
 
-      val decoded = new UriDecoder(title)
-      decoded.decode()
-
-      val decodedTitle = decoded.result().replace('_', ' ')
-
-      val resolvedTitle = resolveTitle(decodedTitle)
-      if(resolvedTitle == decodedTitle)
+      val resolvedTitle = resolveTitle(title)
+      if(resolvedTitle == title)
         return resolveUri
       else
         return new WikiTitle(resolvedTitle, Namespace.Template, lang).encoded.toString()
