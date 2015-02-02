@@ -21,7 +21,7 @@ import scala.collection.mutable.{HashMap, HashSet}
 // FIXME: this class does basically the same thing as RedirectExtractor, just differently.
 //TODO make map private?
 //TODO language dependent
-class Redirects(val map : Map[String, String])
+class Redirects(private val map : Map[String, String])
 {
     /**
      * Resolves a redirect.
@@ -33,13 +33,13 @@ class Redirects(val map : Map[String, String])
     def resolve(title : WikiTitle) : WikiTitle =
     {
         // if there is no redirect for given title, just return same object
-        if (! map.contains(title.decoded)) return title
+        if (! map.contains(title.decodedWithNamespace)) return title
         
         //Remember already visited pages to avoid cycles
         val visited = new HashSet[String]()
 
         //Follows redirects
-        var currentTitle = title.decoded
+        var currentTitle = title.decodedWithNamespace
         while(!visited.contains(currentTitle))
         {
             visited.add(currentTitle)
@@ -235,7 +235,7 @@ object Redirects
             if((destinationTitle != null && page.title.namespace == Namespace.Template && destinationTitle.namespace == Namespace.Template)
               || (page.title.namespace == Namespace.Main && destinationTitle.namespace == Namespace.Main))
             {
-                List((page.title.decoded, destinationTitle.decoded))
+                List((page.title.decodedWithNamespace, destinationTitle.decodedWithNamespace))
             }
             else
             {
