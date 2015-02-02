@@ -7,7 +7,9 @@ import org.dbpedia.extraction.sources.{Source, WikiPage}
 import org.dbpedia.extraction.util.{UriUtils, Language}
 import org.dbpedia.extraction.wikiparser._
 import org.dbpedia.extraction.wikiparser.impl.wikipedia.Redirect
+import org.dbpedia.util.text.uri.UriDecoder
 
+import scala.collection.mutable
 import scala.collection.mutable.{HashMap, HashSet}
 
 /**
@@ -39,33 +41,54 @@ class Redirects(private val map : Map[String, String])
         val visited = new HashSet[String]()
 
         //Follows redirects
-        var currentTitle = title.decodedWithNamespace
-        while(!visited.contains(currentTitle))
-        {
-            visited.add(currentTitle)
-            map.get(currentTitle) match
-            {
-                case Some(destinationTitle) => currentTitle = destinationTitle
-                case None => return new WikiTitle(currentTitle, Namespace.Template, title.language)
-            }
-        }
+        val currentTitle = resolveTitle(title.decodedWithNamespace)
 
-        //Detected a cycle
-        title
+        if(currentTitle == title.decodedWithNamespace)
+          title
+        else
+          new WikiTitle(currentTitle, Namespace.Template, title.language)
     }
 
     /**
      * resolves a redirect as an uri
-     * @param uri
-     * @param lang
+     * @param resolveUri
      * @return uri of resolved page
      */
-    def resolve(uri : String, lang: Language) : String =
+    def resolve(resolveUri : String, lang: Language) : String =
     {
-      var titleName = UriUtils.encode(uri).getPath()
-      val title = WikiTitle.parse(titleName.substring(titleName.lastIndexOf("/")+1), lang)
-      val targetTitle = this.resolve(title)
-      targetTitle.pageIri
+      if(!resolveUri.contains("dbpedia.org/resource/"))  //not!
+        return resolveUri
+
+      val titleName = UriUtils.encode(resolveUri).getPath()
+      val title = titleName.substring(titleName.lastIndexOf("/")+1)
+
+      val decoded = new UriDecoder(title)
+      decoded.decode()
+
+      val decodedTitle = decoded.result().replace('_', ' ')
+
+      val resolvedTitle = resolveTitle(decodedTitle)
+      if(resolvedTitle == decodedTitle)
+        return resolveUri
+      else
+        return new WikiTitle(resolvedTitle, Namespace.Template, lang).encoded.toString()
+    }
+
+    private def resolveTitle(title: String) : String = {
+      //Remember already visited pages to avoid cycles
+      val visited = new mutable.HashSet[String]()
+
+      //Follows redirects
+      var currentTitle = title
+      while (!visited.contains(currentTitle)) {
+        visited.add(currentTitle)
+        map.get(currentTitle) match {
+          case Some(destinationTitle) => currentTitle = destinationTitle
+          case None => return currentTitle
+        }
+      }
+      //Detected a cycle
+      title
     }
 
     /**
@@ -231,9 +254,9 @@ object Redirects
             if (destinationTitle != page.redirect) {
                 Logger.getLogger(Redirects.getClass.getName).log(Level.WARNING, "wrong redirect. page: ["+page.title+"].\nfound by dbpedia:   ["+destinationTitle+"].\nfound by wikipedia: ["+page.redirect+"]")
             }
-                       
-            if((destinationTitle != null && page.title.namespace == Namespace.Template && destinationTitle.namespace == Namespace.Template)
-              || (page.title.namespace == Namespace.Main && destinationTitle.namespace == Namespace.Main))
+
+          if (destinationTitle != null && page.title.namespace == destinationTitle.namespace
+            && (page.title.namespace == Namespace.Template || page.title.namespace == Namespace.Main))
             {
                 List((page.title.decodedWithNamespace, destinationTitle.decodedWithNamespace))
             }
