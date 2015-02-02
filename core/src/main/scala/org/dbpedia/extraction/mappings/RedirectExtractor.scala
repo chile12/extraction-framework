@@ -36,7 +36,6 @@ extends PageNodeExtractor
         return Seq(quad(subjectUri, language.resourceUri.append(destination.decodedWithNamespace), page.sourceUri))
       }
     }
-
     Seq.empty
   }
 }

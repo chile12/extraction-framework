@@ -1,13 +1,14 @@
 package org.dbpedia.extraction.mappings
 
-import java.util.logging.{Level, Logger}
-import org.dbpedia.extraction.sources.{WikiPage, Source}
-import collection.mutable.{HashSet, HashMap}
 import java.io._
-import util.control.ControlThrowable
+import java.util.logging.{Level, Logger}
+
+import org.dbpedia.extraction.sources.{Source, WikiPage}
+import org.dbpedia.extraction.util.{UriUtils, Language}
 import org.dbpedia.extraction.wikiparser._
-import org.dbpedia.extraction.util.Language
 import org.dbpedia.extraction.wikiparser.impl.wikipedia.Redirect
+
+import scala.collection.mutable.{HashMap, HashSet}
 
 /**
  * Holds the redirects between wiki pages
@@ -51,6 +52,20 @@ class Redirects(val map : Map[String, String])
 
         //Detected a cycle
         title
+    }
+
+    /**
+     * resolves a redirect as an uri
+     * @param uri
+     * @param lang
+     * @return uri of resolved page
+     */
+    def resolve(uri : String, lang: Language) : String =
+    {
+      var titleName = UriUtils.encode(uri).getPath()
+      val title = WikiTitle.parse(titleName.substring(titleName.lastIndexOf("/")+1), lang)
+      val targetTitle = this.resolve(title)
+      targetTitle.pageIri
     }
 
     /**
@@ -217,7 +232,8 @@ object Redirects
                 Logger.getLogger(Redirects.getClass.getName).log(Level.WARNING, "wrong redirect. page: ["+page.title+"].\nfound by dbpedia:   ["+destinationTitle+"].\nfound by wikipedia: ["+page.redirect+"]")
             }
                        
-            if(destinationTitle != null && page.title.namespace == Namespace.Template && destinationTitle.namespace == Namespace.Template)
+            if((destinationTitle != null && page.title.namespace == Namespace.Template && destinationTitle.namespace == Namespace.Template)
+              || (page.title.namespace == Namespace.Main && destinationTitle.namespace == Namespace.Main))
             {
                 List((page.title.decoded, destinationTitle.decoded))
             }

@@ -1,8 +1,8 @@
 package org.dbpedia.extraction.dump.extract
 
-import org.dbpedia.extraction.util.ProxyAuthenticator
 import java.net.Authenticator
-import org.dbpedia.extraction.util.ConfigUtils
+
+import org.dbpedia.extraction.util.{ConfigUtils, ProxyAuthenticator}
 
 /**
  * Dump extraction script.
@@ -24,7 +24,9 @@ object Extraction {
     // TODO arguments could be of the format a=b and then property a can be overwritten with "b"
 
     //Load extraction jobs from configuration
-    val jobs = new ConfigLoader(new Config(config)).getExtractionJobs()
+
+    val configLoader = new ConfigLoader(new Config(config))
+    val jobs = configLoader.getExtractionJobs()
 
     //Execute the extraction jobs one by one
     for (job <- jobs) job.run()
