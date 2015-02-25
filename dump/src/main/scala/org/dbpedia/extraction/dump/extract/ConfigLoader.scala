@@ -48,83 +48,15 @@ class ConfigLoader(config: Config)
         val finder = new Finder[File](config.dumpDir, lang, config.wikiName)
 
         val date = latestDate(finder)
-        
-        //Extraction Context
-        val context = new DumpExtractionContext
-        {
-            def ontology = _ontology
-    
-            def commonsSource = _commonsSource
-    
-            def language = lang
-    
-            private lazy val _mappingPageSource =
-            {
-                val namespace = Namespace.mappings(language)
-                
-                if (config.mappingsDir != null && config.mappingsDir.isDirectory)
-                {
-                    val file = new File(config.mappingsDir, namespace.name(Language.Mappings).replace(' ','_')+".xml")
-                    XMLSource.fromFile(file, Language.Mappings)
-                }
-                else
-                {
-                    val namespaces = Set(namespace)
-                    val url = new URL(Language.Mappings.apiUri)
-                    WikiSource.fromNamespaces(namespaces,url,Language.Mappings)
-                }
-            }
-            
-            def mappingPageSource : Traversable[WikiPage] = _mappingPageSource
-    
-            private lazy val _mappings =
-            {
-                MappingsLoader.load(this)
-            }
-            def mappings : Mappings = _mappings
-    
-            private val _articlesSource =
-            {
-              val articlesReaders = readers(config.source, finder, date)
 
-              XMLSource.fromReaders(articlesReaders, language,
-                    title => title.namespace == Namespace.Main || title.namespace == Namespace.File ||
-                             title.namespace == Namespace.Category || title.namespace == Namespace.Template ||
-                             ExtractorUtils.titleContainsCommonsMetadata(title))
-            }
-            
-            def articlesSource = _articlesSource
-    
-            private val _redirects =
-            {
-              val cache = finder.file(date, "template-redirects.obj")
-              Redirects.load(articlesSource, cache, language)
-            }
-            
-            def redirects : Redirects = _redirects
-
-            private val _disambiguations =
-            {
-              val cache = finder.file(date, "disambiguations-ids.obj")
-              try {
-                Disambiguations.load(reader(finder.file(date, config.disambiguations)), cache, language)
-              } catch {
-                case ex: Exception =>
-                  logger.info("Could not load disambiguations - error: " + ex.getMessage)
-                  null
-              }
-            }
-
-            def disambiguations : Disambiguations = if (_disambiguations != null) _disambiguations else new Disambiguations(Set[Long]())
-        }
-
-        //Extractors
+        val context = createDumpExtractionContext(lang, finder)
+      //Extractors
         val extractor = CompositeParseExtractor.load(extractorClasses, context)
         val datasets = extractor.datasets
-        
+
         val formatDestinations = new ArrayBuffer[Destination]()
         for ((suffix, format) <- config.formats) {
-          
+
           val datasetDestinations = new HashMap[String, Destination]()
           for (dataset <- datasets) {
             val file = finder.file(date, dataset.name.replace('_', '-')+'.'+suffix)
@@ -133,7 +65,7 @@ class ConfigLoader(config: Config)
 
           formatDestinations += new DatasetDestination(datasetDestinations)
         }
-        
+
         val destination = new MarkerDestination(new CompositeDestination(formatDestinations.toSeq: _*), finder.file(date, Extraction.Complete), false)
         
         val description = lang.wikiCode+": "+extractorClasses.size+" extractors ("+extractorClasses.map(_.getSimpleName).mkString(",")+"), "+datasets.size+" datasets ("+datasets.mkString(",")+")"
@@ -199,5 +131,79 @@ class ConfigLoader(config: Config)
       val fileName = if (config.requireComplete) Download.Complete else source
       finder.dates(fileName, isSuffixRegex = isSourceRegex).last
     }
+
+  def createDumpExtractionContext(lang:Language, finder: Finder[File]): DumpExtractionContext =
+  {
+    new DumpExtractionContext
+    {
+      def ontology = _ontology
+
+      def commonsSource = _commonsSource
+
+      def language = lang
+
+      val date = latestDate(finder)
+
+      private lazy val _mappingPageSource =
+      {
+        val namespace = Namespace.mappings(language)
+
+        if (config.mappingsDir != null && config.mappingsDir.isDirectory)
+        {
+          val file = new File(config.mappingsDir, namespace.name(Language.Mappings).replace(' ','_')+".xml")
+          XMLSource.fromFile(file, Language.Mappings)
+        }
+        else
+        {
+          val namespaces = Set(namespace)
+          val url = new URL(Language.Mappings.apiUri)
+          WikiSource.fromNamespaces(namespaces,url,Language.Mappings)
+        }
+      }
+
+      def mappingPageSource : Traversable[WikiPage] = _mappingPageSource
+
+      private lazy val _mappings =
+      {
+        MappingsLoader.load(this)
+      }
+      def mappings : Mappings = _mappings
+
+      private val _articlesSource =
+      {
+        val articlesReaders = readers(config.source, finder, date)
+
+        XMLSource.fromReaders(articlesReaders, language,
+          title => title.namespace == Namespace.Main || title.namespace == Namespace.File ||
+            title.namespace == Namespace.Category || title.namespace == Namespace.Template ||
+            ExtractorUtils.titleContainsCommonsMetadata(title))
+      }
+
+      def articlesSource = _articlesSource
+
+      private val _redirects =
+      {
+        val cache = finder.file(date, "template-redirects.obj")
+        Redirects.load(articlesSource, cache, language)
+      }
+
+      def redirects : Redirects = _redirects
+
+      private val _disambiguations =
+      {
+        val cache = finder.file(date, "disambiguations-ids.obj")
+        try {
+          Disambiguations.load(reader(finder.file(date, config.disambiguations)), cache, language)
+        } catch {
+          case ex: Exception =>
+            logger.info("Could not load disambiguations - error: " + ex.getMessage)
+            null
+        }
+      }
+
+      def disambiguations : Disambiguations = if (_disambiguations != null) _disambiguations else new Disambiguations(Set[Long]())
+    }
+
+  }
 }
 

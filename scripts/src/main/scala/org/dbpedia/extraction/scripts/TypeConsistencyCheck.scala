@@ -170,7 +170,7 @@ object TypeConsistencyCheck {
       if (clear)
         relatedClasses.clear()
 
-      if(disjoinedClassesMap((objClass, rangeClass)))
+      if(disjoinedClassesMap.keySet.contains((objClass, rangeClass)) && disjoinedClassesMap((objClass, rangeClass)))
         return true
 
       if(objClass.disjointWithClasses.contains(rangeClass)
